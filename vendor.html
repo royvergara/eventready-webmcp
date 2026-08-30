@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Before anything else parses: a browser restores the scroll offset of a URL you
+     have seen before, and this has to be switched off before it decides to. A module
+     script is deferred, so setting it there is already too late. -->
+<script>history.scrollRestoration = 'manual';</script>
+<title>Vendor · Catering WebMCP</title>
+<link rel="stylesheet" href="/shared/fonts.css">
+<link rel="stylesheet" href="/shared/tailwind.css">
+<link rel="stylesheet" href="/shared/ui.css">
+</head>
+<body class="font-sans">
+<div id="siteHeader"></div>
+
+<main class="mx-auto max-w-3xl px-5 py-8">
+  <div class="sheethead">
+    <div class="sheethead-band">
+      <p class="kicker">Vendor site</p>
+      <p class="sheethead-meta">simulated</p>
+    </div>
+    <div class="flex items-baseline gap-2 flex-wrap">
+      <h1 id="name">Loading…</h1>
+      <span id="tier"></span>
+    </div>
+    <p class="lede" id="blurb"></p>
+  </div>
+
+  <section class="chit mb-4" id="menuCard">
+    <div class="chit-head"><span class="chit-title">Menu</span><span class="chit-note" id="menuNote"></span></div>
+    <div class="chit-body font-mono text-[13px]" id="menu"></div>
+  </section>
+
+  <section class="chit perf mb-8" id="reqCard">
+    <div class="chit-head"><span class="chit-title">What we need from you</span><span class="chit-note">by service level</span></div>
+    <div class="chit-body">
+      <p class="text-[14px] text-ink-soft mt-0 mb-4">
+        Changes with the service level you pick. No vendor publishes this today.
+      </p>
+      <div id="reqs" class="space-y-4"></div>
+    </div>
+  </section>
+
+  <section class="chit">
+    <div class="chit-head"><span class="chit-title">Agent tool calls</span><span class="chit-note">live</span></div>
+    <div class="chit-body"><pre id="log" class="readout">no calls yet</pre></div>
+  </section>
+</main>
+
+<script type="module">
+import { buildVendorTools } from '/shared/vendor-tools.js';
+import { toolHost } from '/shared/webmcp.js';
+import { mountHeader, tierBadge, money, label, esc } from '/shared/ui.js';
+
+mountHeader('Vendor site');
+const $ = id => document.getElementById(id);
+const slug = new URLSearchParams(location.search).get('v') || 'green-fork';
+
+// A slug that does not exist used to fetch the 404 page, hand its HTML to
+// JSON.parse, throw, and leave the page reading "Loading…" for ever with nothing
+// to explain it. A mistyped or stale ?v= is the likeliest way anyone arrives
+// here wrong, so say so and offer the way out.
+const res = await fetch(`/data/vendors/${encodeURIComponent(slug)}.json`);
+if (!res.ok) {
+  document.title = 'Vendor not found · Catering WebMCP';
+  $('name').textContent = 'No such vendor';
+  $('blurb').innerHTML = `There is no vendor called “${esc(slug)}”. The link may be mistyped `
+    + 'or out of date — <a href="/">every vendor is linked from the home page</a>.';
+  // a menu and a requirements table for a vendor that does not exist are just
+  // empty furniture; retire them and leave one card that says what to do
+  $('menuCard').hidden = true;
+  $('reqCard').hidden = true;
+  $('log').textContent = `No vendor loaded (${res.status}), so no tools were registered. `
+    + 'Every vendor is linked from the home page.';
+}
+const v = res.ok ? await res.json() : null;
+if (v) {
+
+document.title = `${v.name} · Catering WebMCP`;
+$('name').textContent = v.name;
+$('blurb').textContent = v.blurb;
+$('tier').innerHTML = tierBadge(v.tier);
+$('menuNote').textContent = `${v.menu.length} items · ${v.lead_time_hours}h lead time`;
+
+$('menu').innerHTML = v.menu.map(i => `
+  <div class="row">
+    <span class="row-name">${esc(i.name)}
+      <span class="text-ink-mute">serves ${i.claimed_serves}</span>
+      ${i.basis_stated
+        ? '<span class="badge badge-ok">basis stated</span>'
+        : '<span class="badge badge-risk">basis not stated</span>'}
+      ${(i.dietary || []).map(d => `<span class="badge badge-tier">${esc(label(d))}</span>`).join('')}
+    </span>
+    <span class="row-num">${money(i.price)}</span>
+  </div>`).join('');
+
+$('reqs').innerHTML = Object.entries(v.requirements).map(([lvl, r]) => `
+  <div class="border-l-2 border-carbon pl-3">
+    <div class="font-mono text-[11px] uppercase tracking-[.12em] text-carbon mb-2">${esc(label(lvl))}</div>
+    <div class="text-[14px] mb-1">
+      <span class="text-ink-mute">they bring</span>
+      ${(r.provides || []).map(p => `<span class="badge badge-ok ml-1">${esc(label(p))}</span>`).join('') || '—'}
+    </div>
+    <div class="text-[14px]">
+      <span class="text-ink-mute">you supply</span>
+      ${(r.requires || []).map(q => `<span class="badge ml-1" style="background:var(--tape-soft);color:var(--watch);border-color:#EFDDB4">${esc(label(q))}</span>`).join('') || '—'}
+    </div>
+  </div>`).join('');
+
+const calls = [];
+const log = (n, i, o) => {
+  calls.unshift({ at: new Date().toISOString(), tool: n, input: i, output: o });
+  $('log').textContent = JSON.stringify(calls, null, 2);
+};
+
+{
+  const mc = toolHost();
+  for (const t of buildVendorTools(v)) {
+    mc.registerTool({
+      name: t.name, description: t.description, inputSchema: t.inputSchema,
+      execute: async (input) => {
+        const out = t.run(input);
+        log(t.name, input, out);
+        return { content: [{ type: 'text', text: JSON.stringify(out) }] };
+      }
+    });
+  }
+  // The tools are registered either way. Only discovery needs a WebMCP browser, and
+  // saying which of the two you are in is the honest thing for the log to open with.
+  $('log').textContent = mc.shimmed
+    ? 'No WebMCP in this browser, so an agent cannot discover these. '
+      + `${buildVendorTools(v).length} tools are registered and can be fired by hand from /harness.html.`
+    : `${buildVendorTools(v).length} tools registered. No calls yet.`;
+}
+}   // end: a vendor was found
+</script>
+</body>
+</html>

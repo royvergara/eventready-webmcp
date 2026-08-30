@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Before anything else parses: a browser restores the scroll offset of a URL you
+     have seen before, and this has to be switched off before it decides to. A module
+     script is deferred, so setting it there is already too late. -->
+<script>history.scrollRestoration = 'manual';</script>
+<title>Smoke test · Catering WebMCP</title>
+<link rel="stylesheet" href="/shared/fonts.css">
+<link rel="stylesheet" href="/shared/tailwind.css">
+<link rel="stylesheet" href="/shared/ui.css">
+</head>
+<body class="font-sans">
+<div id="siteHeader"></div>
+
+<main class="mx-auto max-w-3xl px-5 py-8">
+  <div class="sheethead">
+    <div class="sheethead-band">
+      <p class="kicker"><span class="kicker-no">05</span>Smoke test</p>
+      <p class="sheethead-meta">2 tools</p>
+    </div>
+    <h1>Check that this browser can find and call a tool</h1>
+    <p class="lede">One page, two tools, nothing else on it to get in the way of the answer.</p>
+  </div>
+
+  <section class="chit mb-4">
+    <div class="chit-head"><span class="chit-title">Status</span></div>
+    <div class="chit-body">
+      <p id="statusLine" class="m-0 mb-3 font-semibold text-[15px]">checking…</p>
+      <pre id="log" class="readout">no calls yet</pre>
+    </div>
+  </section>
+
+  <section class="chit">
+    <div class="chit-head"><span class="chit-title">How to test</span></div>
+    <div class="chit-body text-[15px] text-ink-soft">
+      <ol class="m-0 pl-5 space-y-1">
+        <li>Open this page in the ChatGPT in-app browser, or Chrome 149+ with
+          <code class="font-mono text-[13px] bg-paper-sunk px-1">chrome://flags/#enable-webmcp-testing</code>.</li>
+        <li>Ask the agent what tools this page offers.</li>
+        <li>Ask it to use <code class="font-mono text-[13px] bg-paper-sunk px-1">ping</code> with the message hello.</li>
+        <li>The call lands in the log above.</li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { toolHost } from '/shared/webmcp.js';
+import { mountHeader } from '/shared/ui.js';
+mountHeader('Smoke test');
+
+const statusEl = document.getElementById('statusLine');
+const logEl = document.getElementById('log');
+const calls = [];
+const log = (name, input, output) => {
+  calls.unshift({ at: new Date().toISOString(), name, input, output });
+  logEl.textContent = JSON.stringify(calls, null, 2);
+};
+
+// The tools register either way — /harness.html fires them by hand from the local
+// registry. What changes is only whether an agent can discover them, and this page
+// exists to say which of those two worlds you are in.
+const mc = toolHost();
+if (mc.shimmed) {
+  statusEl.textContent = 'WebMCP not available in this browser, so nothing here is discoverable by an agent. '
+    + 'Enable the flag, or use the ChatGPT in-app browser. Both tools are still registered and can be fired from /harness.html.';
+  statusEl.style.color = 'var(--short)';
+} else {
+  statusEl.textContent = 'WebMCP available. Two tools registered.';
+  statusEl.style.color = 'var(--covered)';
+}
+
+{
+  mc.registerTool({
+    name: 'ping',
+    description: 'Echo a message back. Verifies WebMCP tool discovery and invocation.',
+    inputSchema: { type: 'object', properties: { message: { type: 'string' } }, required: ['message'] },
+    execute: async (input) => {
+      const out = { echoed: input.message, at: new Date().toISOString() };
+      log('ping', input, out);
+      return { content: [{ type: 'text', text: JSON.stringify(out) }] };
+    }
+  });
+
+  mc.registerTool({
+    name: 'get_page_facts',
+    description: 'Return basic facts about this page, to verify multi-tool discovery.',
+    inputSchema: { type: 'object', properties: {} },
+    execute: async () => {
+      const out = { page: 'smoke', url: location.href, tools: ['ping', 'get_page_facts'] };
+      log('get_page_facts', {}, out);
+      return { content: [{ type: 'text', text: JSON.stringify(out) }] };
+    }
+  });
+}
+</script>
+</body>
+</html>
