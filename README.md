@@ -1,17 +1,17 @@
 # EventReady
 
-**[eventready-webmcp.vercel.app](https://eventready-webmcp.vercel.app/)** — a WebMCP-powered readiness agent for the people who accidentally become event operators.
+**[eventready-webmcp.vercel.app](https://eventready-webmcp.vercel.app/)** — an AI-native event workspace for planning, coordinating, and running an event end to end.
 
-Bookings answer “what did we buy?” EventReady answers the harder question: **will the event actually work?** It combines provider commitments, venue constraints, timing, equipment, and human ownership into a readiness decision and an evidence-backed run-of-show.
+EventReady brings the plan, guests, vendors, budget, team, responsibilities, and day-of schedule into one shared workspace. Its readiness layer answers the question ordinary planning checklists miss: **will everything actually work together?**
 
 ## Two-minute demo
 
-1. Open [EventReady](https://eventready-webmcp.vercel.app/) and assess the prefilled 75-person fundraiser.
-2. See the difference between covered needs and work that vendors quietly leave to the organizer.
-3. Change Pickup to Delivery; only the affected timing and transport work recalculates.
-4. Assign the remaining jobs to the organizer. The plan moves from Blocked to Ready and produces a shareable run-of-show.
+1. Open [EventReady](https://eventready-webmcp.vercel.app/) inside the active 75-person fundraiser.
+2. Explore the end-to-end Plan, Guests, Vendors, Budget, Team, and Day-of workspace.
+3. Ask the embedded EventReady assistant to review its plan, then inspect the proposed provider and ownership changes.
+4. Apply the changes. The shared event moves from Needs attention to Ready and produces a shareable run-of-show.
 
-[Judge Mode](https://eventready-webmcp.vercel.app/judge.html) links the primary journey, manual tool harness, source-gradient proof, discovery smoke test, and technical planner.
+[Developer details](https://eventready-webmcp.vercel.app/developers.html) explains WebMCP separately from the consumer product. [Judge Mode](https://eventready-webmcp.vercel.app/judge.html) provides the fast verification path.
 
 ## Why WebMCP
 

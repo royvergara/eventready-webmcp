@@ -4,7 +4,7 @@ EventReady
 
 ## One-line Summary
 
-EventReady turns disconnected event bookings, venue constraints, and human responsibilities into a verified, owned run-of-show using WebMCP.
+EventReady is an AI-native workspace for planning, coordinating, and running an event end to end—with WebMCP continuously checking that the whole plan will work together.
 
 ## Problem
 
@@ -12,7 +12,7 @@ Community organizers, office managers, nonprofit staff, and other “accidental 
 
 ## Solution
 
-EventReady is a readiness workspace, not another generic event-planning marketplace. A user provides an event brief, then EventReady composes provider and venue commitments into six readiness domains: food and guest needs, venue and access, equipment, people and ownership, timing, and budget. It distinguishes blockers from risks, exposes every job left to the organizer, and requires explicit human ownership before labeling the event Ready. The output is a chronological, evidence-backed run-of-show that can be copied, printed, or handed to the event team.
+EventReady is the shared home for an event from first plan to final cleanup. It unifies the plan, guests, vendors, budget, team, responsibilities, and day-of schedule in a consumer workspace that a person and agent can edit together. Underneath, it composes provider and venue commitments into six readiness domains, exposes every job left to the organizer, and requires explicit ownership before labeling the event Ready. The final output is a chronological, evidence-backed run-of-show.
 
 ## Why This Matters
 
@@ -45,11 +45,11 @@ EventReady is a dependency-free static application. Pure planning and trust modu
 ## Testing Instructions
 
 1. Open https://eventready-webmcp.vercel.app/ in ChatGPT's in-app browser or WebMCP-enabled desktop Chrome.
-2. Click **Assess the sample event**.
-3. Review readiness domains and unowned responsibilities.
-4. Change **Pickup** to **Delivery** and observe the changed-only explanation.
-5. Click **Assign remaining to me**. Confirm the state becomes **Ready** and the 17-row run-of-show has no unassigned owner.
-6. Open `/judge.html` for direct links to the tool harness, source gradient, discovery smoke test, and technical planner.
+2. Explore the active fundraiser across Overview, Plan, Guests, Vendors, Budget, Team, and Day-of.
+3. In the EventReady assistant, click **Review my plan**.
+4. Review and apply the proposed service and responsibility changes.
+5. Confirm the event becomes **Ready** and the 17-row day-of plan has no unassigned owner.
+6. Open `/developers.html` for the product's WebMCP explanation or `/judge.html` for the direct verification path.
 7. Locally, run `npm test` for 196 deterministic tests and `npm run dev` for the static site.
 
 Tested with the Codex/ChatGPT in-app browser's native WebMCP support. Production verification found all nine tools, completed the canonical flow, loaded Judge Mode, and produced no console errors.
