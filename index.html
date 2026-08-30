@@ -1,100 +1,15 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<!-- Before anything else parses: a browser restores the scroll offset of a URL you
-     have seen before, and this has to be switched off before it decides to. A module
-     script is deferred, so setting it there is already too late. -->
-<script>history.scrollRestoration = 'manual';</script>
-<title>Catering WebMCP</title>
-<link rel="stylesheet" href="/shared/fonts.css">
-<link rel="stylesheet" href="/shared/tailwind.css">
-<link rel="stylesheet" href="/shared/ui.css">
-</head>
-<body class="font-sans">
-<div id="siteHeader"></div>
-
-<main class="mx-auto max-w-3xl px-5 py-10">
-
-  <section class="rise mb-10">
-    <div class="sheethead sheethead-hero">
-      <div class="sheethead-band">
-        <p class="kicker"><span class="kicker-no">01</span>Overview</p>
-        <p class="sheethead-meta">WebMCP demo</p>
-      </div>
-      <h1>Plan catering for a crowd, and see every job the order leaves you</h1>
-      <p class="lede">
-        Ordering food for forty people is easy. Knowing what to order, how much, and what the order
-        quietly leaves you doing is not. This reads several vendor sites, composes an order, and
-        names every job it creates — including the ones that appear on no receipt.
-      </p>
-    </div>
-    <a href="/plan.html" class="btn no-underline text-white">Open the planner</a>
-  </section>
-
-  <section class="chit perf mb-14 rise">
-    <div class="chit-head"><span class="chit-title">What a receipt never says</span><span class="chit-note">3 of 7 jobs</span></div>
-    <div class="chit-body font-mono text-[13px]">
-      <div class="row"><span class="row-name">Cook and pack</span><span class="row-num text-ink-mute">Green Fork</span></div>
-      <div class="row"><span class="row-name">Deliver and set trays</span><span class="row-num text-ink-mute">Green Fork</span></div>
-      <div class="row"><span class="row-name"><span class="tape">Hold above 140&deg;F, 5:15&ndash;8:00</span></span><span class="row-num">You</span></div>
-      <div class="row"><span class="row-name"><span class="tape">Refill trays during service</span></span><span class="row-num">You</span></div>
-      <div class="row"><span class="row-name"><span class="tape">Trash and cleanup</span></span><span class="row-num">You</span></div>
-    </div>
-  </section>
-
-  <section class="mb-12">
-    <h2 class="font-semibold text-lg mb-1">Vendors</h2>
-    <p class="text-ink-soft text-[15px] mb-4">
-      Each vendor is its own page with its own tools. Open one and ask an agent what it offers.
-    </p>
-    <div class="grid gap-3 sm:grid-cols-2" id="vendors"></div>
-  </section>
-
-  <section class="grid gap-3 sm:grid-cols-2 mb-12">
-    <a href="/harness.html" class="chit no-underline text-ink block">
-      <div class="chit-body">
-        <div class="font-semibold mb-1">Tool harness</div>
-        <p class="text-[14px] text-ink-soft m-0">Fire every tool by hand. Works in any browser, phone included.</p>
-      </div>
-    </a>
-    <a href="/smoke.html" class="chit no-underline text-ink block">
-      <div class="chit-body">
-        <div class="font-semibold mb-1">Smoke test</div>
-        <p class="text-[14px] text-ink-soft m-0">Confirm an agent can discover and call a tool here.</p>
-      </div>
-    </a>
-  </section>
-
-  <section class="chit">
-    <div class="chit-head"><span class="chit-title">What is real</span></div>
-    <div class="chit-body text-[15px] text-ink-soft space-y-2">
-      <p class="m-0">The six vendors are reference implementations, not real businesses.</p>
-      <p class="m-0">No real caterer publishes what it needs from you. That gap is the whole point.</p>
-      <p class="m-0">No payments. Orders are assembled ready to place on each vendor&rsquo;s own site.</p>
-      <p class="m-0 text-ink-mute">Open in the ChatGPT in-app browser, or Chrome 149+ with
-        <code class="font-mono text-[13px] bg-paper-sunk px-1">chrome://flags/#enable-webmcp-testing</code>.</p>
-    </div>
-  </section>
-</main>
-
-<script type="module">
-import { mountHeader, tierBadge, esc } from '/shared/ui.js';
-mountHeader('Overview');
-
-const slugs = ['green-fork','masa-y-mas','sweet-bench','casa-vieja','prime-platters','loop-rentals','handoff-staffing'];
-const vs = await Promise.all(slugs.map(s => fetch(`/data/vendors/${s}.json`).then(r => r.json())));
-document.getElementById('vendors').innerHTML = vs.map(v => `
-  <a class="chit no-underline text-ink block hover:shadow-chit" href="/vendor.html?v=${encodeURIComponent(v.slug)}">
-    <div class="chit-body">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="font-semibold">${esc(v.name)}</span>
-        ${tierBadge(v.tier)}
-      </div>
-      <p class="text-[14px] text-ink-soft m-0">${esc(v.blurb)}</p>
-    </div>
-  </a>`).join('');
-</script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script>history.scrollRestoration = 'manual';</script><title>EventReady · Know what it takes to be ready</title>
+<meta name="description" content="Turn event bookings into a verified, owned run-of-show with WebMCP.">
+<link rel="stylesheet" href="/shared/fonts.css"><link rel="stylesheet" href="/shared/tailwind.css"><link rel="stylesheet" href="/shared/ui.css"></head>
+<body class="font-sans"><div id="siteHeader"></div><main class="event-shell">
+<section class="event-hero rise"><p class="kicker"><span class="kicker-no">01</span>Event readiness workspace</p><h1>Your event isn’t ready just because everything is booked.</h1><p class="lede">EventReady checks the work between vendors, exposes what still lands on you, and turns the result into an owned run-of-show.</p><div class="hero-actions"><button id="assess" class="btn">Assess the sample event</button><span class="hero-hint">75-person community fundraiser · Riverside Hall</span></div></section>
+<section class="event-grid" aria-label="Event brief and readiness"><article class="chit event-brief"><div class="chit-head"><span class="chit-title">Event brief</span><span class="chit-note">sample data</span></div><div class="chit-body brief-grid">
+<label>Event<input id="eventTitle" class="field" value="Riverside Community Fundraiser"></label><label>Guests<input id="headcount" class="field" type="number" value="75"></label><label>Budget<input id="budget" class="field" type="number" value="4000"></label><label>Serve at<input id="serveAt" class="field" type="datetime-local" value="2026-09-12T18:00"></label><label>Vegetarian<input id="vegetarian" class="field" type="number" value="10"></label><label>Vegan<input id="vegan" class="field" type="number" value="6"></label><label>Gluten free<input id="glutenFree" class="field" type="number" value="5"></label><label class="brief-wide">Venue<input id="venue" class="field" value="Riverside Hall · no kitchen"></label>
+</div></article><aside class="chit readiness-card" aria-live="polite"><div class="chit-head"><span class="chit-title">Readiness</span><span id="readinessStamp" class="chit-note">not assessed</span></div><div class="chit-body"><div class="readiness-gauge"><strong id="score">—</strong><span>readiness score</span></div><p id="readinessMessage" class="readiness-message">Run the assessment to find coverage gaps and unowned work.</p><div id="domainList" class="domain-list"></div></div></aside></section>
+<section id="workspace" class="workspace" hidden><div class="section-heading"><div><p class="kicker"><span class="kicker-no">02</span>Make the event executable</p><h2>Resolve the seams, not just the shopping list.</h2></div><span id="stateBadge" class="badge badge-blocker">Blocked</span></div><div id="blockers" class="finding-stack"></div>
+<div class="event-grid"><article class="chit"><div class="chit-head"><span class="chit-title">Plan alternatives</span><span class="chit-note">choose deliberately</span></div><div id="options" class="chit-body option-list"></div></article><article class="chit"><div class="chit-head"><span class="chit-title">Service & ownership</span><span class="chit-note">human decisions</span></div><div class="chit-body"><label class="control-label" for="serviceLevel">Provider service level</label><select id="serviceLevel" class="field"><option value="pickup">Pickup</option><option value="delivery">Delivery</option><option value="dropoff_setup">Drop-off + setup</option></select><p class="control-note">Changing service recalculates only the jobs it covers.</p><div id="responsibilities" class="responsibility-list"></div><button id="assignAll" class="btn btn-quiet">Assign remaining to me</button></div></article></div><div id="delta" class="delta-note" hidden></div>
+<article class="chit run-card"><div class="chit-head"><span class="chit-title">Run of show</span><span id="runStatus" class="chit-note">draft</span></div><div class="chit-body"><div class="artifact-actions"><p id="runIntro">Resolve every blocker and owner before this becomes Ready.</p><div><button id="copyRun" class="btn btn-quiet">Copy</button> <button id="printRun" class="btn btn-quiet">Print</button></div></div><div class="run-table"><div class="run-row run-head"><span>When</span><span>Action</span><span>Owner</span><span>Evidence</span></div><div id="runRows"></div></div></div></article></section>
+<section class="proof-strip"><p><strong>What’s real:</strong> seven reference providers, a venue contract, deterministic planning, explicit provenance, and nine WebMCP tools. No payments or real bookings.</p><a href="/judge.html">Open Judge Mode →</a></section>
+</main><script type="module" src="/shared/eventready-ui.js"></script></body></html>

@@ -13,7 +13,7 @@
       "price": 168, "dietary": ["gluten_free"], "hot": true, "minimum": 1 },
     { "id": "gf-veg", "name": "Roasted vegetable tray", "category": "main",
       "claimed_serves": 10, "basis_mains": 1, "basis_stated": true, "portion_oz": 6,
-      "price": 78, "dietary": ["vegetarian", "gluten_free"], "hot": true, "minimum": 1 },
+      "price": 78, "dietary": ["vegetarian", "vegan", "gluten_free"], "hot": true, "minimum": 1 },
     { "id": "gf-salad", "name": "Chopped salad", "category": "salad",
       "claimed_serves": 25, "basis_mains": 3, "basis_stated": false, "portion_oz": 4,
       "price": 62, "dietary": ["vegetarian", "gluten_free"], "hot": false, "minimum": 1 }

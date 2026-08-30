@@ -1,0 +1,27 @@
+{
+  "title": "Riverside Community Fundraiser",
+  "event_type": "community fundraiser",
+  "venue_name": "Riverside Hall",
+  "description": "75 people, community fundraiser, $4000 budget, 10 vegetarians, 6 vegan, 5 gluten free, no kitchen at the venue",
+  "headcount": 75,
+  "budget": 4000,
+  "serve_at": "2026-09-12T18:00:00-05:00",
+  "duration_hours": 3,
+  "dietary": {
+    "vegetarian": 10,
+    "vegan": 6,
+    "gluten_free": 5
+  },
+  "venue_has_kitchen": false,
+  "helpers_available": 2,
+  "host_provides": [],
+  "provenance": {
+    "title": "given",
+    "headcount": "given",
+    "budget": "given",
+    "serveAt": "given",
+    "durationHours": "given",
+    "dietary": "given",
+    "venueHasKitchen": "given"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "slug": "riverside-hall",
+  "name": "Riverside Hall",
+  "tier": "T0",
+  "kind": "venue",
+  "blurb": "A flexible neighborhood hall with tables and chairs, but no commercial kitchen or event staff.",
+  "capacity": 120,
+  "service_levels": ["space_only"],
+  "lead_time_hours": 24,
+  "blackout_dates": [],
+  "menu": [],
+  "requirements": {
+    "space_only": {
+      "requires": ["setup", "cleanup", "someone_on_site_at_delivery"],
+      "provides": ["venue", "parking", "access_30min_before", "plates"]
+    }
+  },
+  "accommodations": []
+}

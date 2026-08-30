@@ -1,7 +1,8 @@
 // Shared UI helpers so every page uses the same patterns.
 const NAV = [
-  { href: '/', label: 'Overview' },
-  { href: '/plan.html', label: 'Planner' },
+  { href: '/', label: 'EventReady' },
+  { href: '/judge.html', label: 'Judge Mode' },
+  { href: '/plan.html', label: 'Legacy planner' },
   { href: '/gradient.html', label: 'Source gradient' },
   { href: '/harness.html', label: 'Tool harness' },
   { href: '/smoke.html', label: 'Smoke test' }
@@ -37,8 +38,8 @@ export function mountHeader(active) {
   el.innerHTML = `
     <header class="masthead">
       <div class="masthead-inner">
-        <a href="/" class="mark" aria-label="Catering WebMCP, home">
-          <span class="mark-name">CATERING</span><span class="mark-dot">·</span><span class="mark-code">WEBMCP</span>
+        <a href="/" class="mark" aria-label="EventReady WebMCP, home">
+          <span class="mark-name">EVENTREADY</span><span class="mark-dot">·</span><span class="mark-code">WEBMCP</span>
         </a>
 
         <nav class="ml-auto hidden sm:flex gap-4" aria-label="Sections">

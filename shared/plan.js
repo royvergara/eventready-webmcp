@@ -233,15 +233,16 @@ export function explainQuantity(item, occasion, demand) {
   ];
 }
 
-export function planPickups(basket, occasion) {
+export function planPickups(basket, occasion, serviceLevel = 'pickup') {
   const byVendor = {};
   for (const i of basket.items) (byVendor[i.vendor] ||= []).push(i);
   const serve = new Date(occasion.serveAt);
+  const delivered = serviceLevel !== 'pickup';
   return Object.keys(byVendor).map((v, idx) => ({
     vendor: v,
-    at: new Date(serve.getTime() - (4 - idx * 0.33) * 3.6e6).toISOString(),
+    at: new Date(serve.getTime() - (delivered ? 1 : (4 - idx * 0.33)) * 3.6e6).toISOString(),
     hot: byVendor[v].some(i => i.hot),
-    selfCollect: true
+    selfCollect: !delivered
   }));
 }
 
@@ -257,7 +258,7 @@ export function assemblePlan(occasion, vendors, serviceLevel = 'pickup', opts = 
   const useVendors = applied.vendors;
 
   const basket = composeBasket(useOccasion, useVendors, opts.compose || {});
-  basket.pickups = planPickups(basket, useOccasion);
+  basket.pickups = planPickups(basket, useOccasion, serviceLevel);
 
   const requirementsByVendor = {};
   for (const slug of basket.vendorsUsed) {
