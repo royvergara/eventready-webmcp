@@ -1,332 +1,304 @@
-# Technical Spec
+# Technical Spec — Product Experience Rebuild
 
 ## Overview
 
-EventReady will be implemented as a product layer over the existing dependency-free Catering WebMCP engine. The validated planning, assumptions, source-adapter, scheduling, trust, option-ranking, and WebMCP registration modules remain intact. New modules generalize their outputs into event domains, readiness states, responsibility assignments, and a shareable run-of-show.
+EventReady will be rebuilt around an **event command center** rather than a conventional tabbed dashboard. The product journey is:
 
-The primary experience moves to `/`, with a brief-first workflow and a prefilled fundraiser demo. Existing diagnostic pages remain available through `/judge.html` and direct routes. The deployment stays static on Vercel; no account, server, database, secret, or paid API is required.
+`Describe → Shape → Source → Coordinate → Prepare → Run`
+
+The existing deterministic planning, trust, provider-ranking, readiness, responsibility, scheduling, and WebMCP layers remain the technical foundation. The rebuild changes the interaction model and presentation architecture so a visitor can see information being interpreted, understand why each decision matters, and reach a credible operational artifact without learning the software first.
+
+This is a structural product pass, not a framework migration and not another CSS-only pass.
 
 ## Stack
 
-- HTML5 pages and accessible native form controls.
-- CSS through the existing committed Tailwind output plus component CSS.
-- JavaScript ES modules in the browser.
-- JSON provider fixtures representing fictional reference implementations.
-- `document.modelContext.registerTool()` through the existing `shared/webmcp.js` compatibility layer.
-- Node 24-compatible built-in test runner.
-- Static Vercel hosting configured by `vercel.json`.
+- Semantic HTML5 and accessible native controls.
+- Existing CSS token and component layers, reorganized around the new application shell.
+- Browser-native JavaScript ES modules.
+- Existing JSON event, venue, and fictional provider fixtures.
+- Existing `EventSession`, deterministic engine, and nine application-level WebMCP tools.
+- Versioned `localStorage` for anonymous prototype persistence.
+- Node built-in test runner and static Vercel deployment.
 
-Why: the current stack has no runtime dependencies, deploys reliably, loads offline, and already passes 184 tests. Introducing a framework would spend the remaining time on plumbing rather than the judged product experience.
+Why: the engine already passes 196 tests and has no runtime dependency risk. Browserbase and Liftoff are interaction references, not reasons to introduce Next.js. A migration would not improve judging criteria within the remaining time.
 
 References:
 
 - [WebMCP specification](https://webmachinelearning.github.io/webmcp/)
 - [Chrome WebMCP documentation](https://developer.chrome.com/docs/ai/webmcp)
-- [Secure WebMCP tools](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
-- [Vercel static deployments](https://vercel.com/docs/deployments)
+- [Browserbase Next.js template](https://browserbase-nextjs-template.vercel.app/)
+- [Liftoff guided demo](https://demo.useliftoff.com/demo)
+- [Vercel Workflow Builder](https://vercel.com/templates/next.js/workflow-builder)
 
-## Architecture
+## Product Architecture
 
-### Layer 1: Provider sites and contracts
+### Experience state 1: Start
 
-Fictional provider JSON is rendered by provider pages and exposed through WebMCP tools. The existing caterer, rental, and staffing fixtures remain. A venue fixture and generalized provider capability fields are added without allowing arbitrary provider text to influence ranking.
+Implements: `prd.md > Epic 1: Create an event brief`
 
-Implements: `prd.md > Epic 2: Evaluate provider capabilities`
+The start screen has one dominant job: describe the event. It contains one concise outcome promise, one large event brief input, four recognizable starting cases, a concrete preview of the output, and existing/sample plans as secondary paths. It must not resemble a marketing landing page or a populated event-detail screen.
 
-### Layer 2: Pure planning and trust engine
+### Experience state 2: Shape
 
-Existing pure modules continue to parse the occasion, normalize quantities, create options, preserve confirmations, compute deltas, schedule jobs, and quarantine hostile data. A new readiness module maps findings and ownership rows into stable operational domains and states.
+Implements: `prd.md > Epic 1`, `Epic 3`
 
-Implements: `prd.md > Epic 2`, `Epic 3`, `Epic 4`
+After the initial description, a split-screen planning canvas makes interpretation visible.
 
-### Layer 3: Event application controller
+**Decision pane (40–44%):** one grouped question at a time:
 
-`shared/eventready.js` orchestrates the existing plan engine plus the new readiness module. It maintains one in-memory `EventSession`, handles explicit assignments/resolutions, and derives all display models. It exposes application-level WebMCP tools whose outputs match the visible UI state.
+1. Occasion and intent.
+2. Date, time, venue, and infrastructure.
+3. Guests and accessibility/dietary requirements.
+4. Budget and service priorities.
+5. What is already booked or owned.
 
-Implements: `prd.md > Epic 1`, `Epic 3`, `Epic 4`, `Epic 5`
+**Live-plan pane (56–60%):** continuously shows the structured event identity, known facts, assumptions, required service domains, budget envelope, and milestone path.
 
-### Layer 4: Product UI
+Every inferred or assumed value is editable and labeled. “Build my plan” is enabled once the minimum viable brief is valid. The sample event can complete this flow without external services.
 
-`index.html` becomes the EventReady landing and workspace. It uses progressive sections: brief, provider plan, readiness, resolve, and run-of-show. Technical evidence is linked through Judge Mode rather than displayed throughout the default path.
+### Experience state 3: Event command center
 
-Implements: all user-facing PRD epics.
+Implements: `prd.md > Epic 2`, `Epic 3`, `Epic 4`, `Epic 5`
 
-### Layer 5: Judge Mode
+The workspace is organized by outcomes:
 
-`judge.html` provides a concise two-minute verification route and links the existing smoke, harness, gradient, vendor, legacy planner, tests, repository, and security evidence.
+1. **Shape** — brief, assumptions, constraints, and priorities.
+2. **Source** — needed services, ranked provider options, tradeoffs, and test commitments.
+3. **Coordinate** — people, provider obligations, owners, money, and dependencies.
+4. **Prepare** — blocker closure, readiness evidence, and final confirmations.
+5. **Run** — chronological operating plan and sharing actions.
+
+The default workspace view is the living event plan. It shows phases as a connected sequence with completion conditions. The next unresolved decision receives visual priority; summary metrics are supporting evidence.
+
+### Contextual action layer
+
+Implements: `prd.md > Epic 4: Resolve blockers with the human`
+
+AI/WebMCP capability appears where a decision is being made, never as an empty chat rail. Examples include finding options that cover dietary needs, showing the impact of 150 guests, changing service level, assigning responsibilities, reducing cost, and preparing the run sheet.
+
+Mutating actions open a proposal sheet with the requested change, affected requirements, cost/readiness delta, new risks, and explicit Apply and Cancel actions.
+
+### Developer and judge surface
 
 Implements: `prd.md > Epic 6: Explain and verify the WebMCP implementation`
 
+Consumer screens contain only a restrained technical link. `/developers.html` and Judge Mode remain separate and show tool contracts, live state, provenance, source-gradient behavior, trust defenses, harness links, and the two-minute verification path.
+
+## Responsive Layout Contract
+
+### Wide desktop — 1280px and above
+
+- Maximum application width: 1440px.
+- Persistent 216–232px phase rail.
+- Fluid primary canvas with a 680px minimum useful content measure.
+- Optional 288–320px contextual inspector only when an active proposal or selected object requires it.
+- The inspector never permanently narrows every view.
+
+### Standard desktop/tablet — 768px to 1279px
+
+- Phase rail becomes a horizontal progress stepper.
+- One primary content column.
+- Contextual inspector becomes a drawer or inline expansion.
+- Comparison tables may scroll only inside their own container.
+
+### Mobile — below 768px
+
+- Single column with no page-level horizontal overflow.
+- Compact phase stepper showing current phase and completion count.
+- Sticky bottom primary action only when a clear next action exists.
+- Provider comparisons become stacked cards with the same data hierarchy.
+
+## Visual System
+
+- Neutral ink, white, and cool-gray shell.
+- One event-specific accent from a restrained accessible palette.
+- Editorial event identity in the header; operational density in the workspace.
+- Sans-serif interface typography with a clear four-level hierarchy.
+- 8px spacing system and three radii: control, surface, overlay.
+- Prefer dividers, aligned columns, and grouped rows before adding cards.
+- Icons indicate categories or actions, never decoration.
+- Every major view defines loading, empty, blocked, proposed, committed, and completed states.
+
+## Application State Model
+
+```js
+{
+  route: "start" | "shape" | "workspace",
+  activePhase: "shape" | "source" | "coordinate" | "prepare" | "run",
+  activeStep: number,
+  brief: EventBrief,
+  selectedOptionId: string | null,
+  booking: TestBooking | null,
+  assignments: Record<string, ResponsibilityAssignment>,
+  proposal: ChangeProposal | null,
+  readiness: ReadinessReport,
+  runOfShow: RunOfShow
+}
+```
+
+`EventSession` remains the source of derived planning truth. A new UI controller owns route, phase, selection, and proposal state. UI state never duplicates calculated readiness or provider outputs.
+
+Persistence uses a new versioned key. On schema mismatch the app loads the canonical sample instead of merging incompatible state. Reset clears current UI and engine state together.
+
 ## Data Contracts
 
-### EventBrief
+Existing `EventBrief`, `ProviderCapability`, `ResponsibilityAssignment`, `ReadinessReport`, and `RunOfShow` contracts remain.
 
-```js
-{
-  title: string,
-  eventType: string,
-  venueName: string,
-  headcount: number,
-  budget: number,
-  serveAt: ISO8601,
-  durationHours: number,
-  dietary: { vegetarian?: number, vegan?: number, gluten_free?: number },
-  venueHasKitchen: boolean,
-  helpersAvailable: number,
-  hostProvides: string[],
-  provenance: Record<string, "given" | "parsed" | "assumed" | "confirmed">
-}
-```
-
-### ProviderCapability
-
-```js
-{
-  provider: string,
-  domain: "food" | "venue" | "equipment" | "staffing",
-  serviceLevel: string,
-  available: boolean,
-  provides: string[],
-  requires: string[],
-  constraints: Array<{ type: string, value: unknown, source: string }>,
-  source: { tier: string, fetchedAt: string, confidence: number }
-}
-```
-
-### ResponsibilityAssignment
+### ChangeProposal
 
 ```js
 {
   id: string,
-  resource: string,
-  domain: string,
-  provider?: string,
-  owner: "provider" | "organizer" | "volunteer" | "unassigned",
-  ownerLabel: string,
-  status: "covered" | "assigned" | "unresolved",
-  evidence: string
+  label: string,
+  action: { tool: string, input: object },
+  before: { cost: number, blockers: number, unowned: number },
+  after: { cost: number, blockers: number, unowned: number },
+  deltaLines: string[],
+  newRisks: Finding[],
+  requiresConfirmation: true
 }
 ```
 
-### ReadinessReport
+### TestBooking
 
 ```js
 {
-  state: "not_assessed" | "needs_decisions" | "blocked" | "ready",
-  score: number,
-  counts: { covered: number, total: number, blockers: number, risks: number, unowned: number },
-  domains: Array<{ id: string, label: string, status: string, covered: number, total: number }>,
-  blockers: Finding[],
-  risks: Finding[],
-  responsibilities: ResponsibilityAssignment[],
-  updatedAt: string
+  optionId: string,
+  eventId: string,
+  providerLabels: string[],
+  subtotal: number,
+  status: "test_committed",
+  createdAt: ISO8601
 }
 ```
 
-### RunOfShow
-
-```js
-{
-  status: "draft" | "ready",
-  event: EventBrief,
-  rows: Array<{ at: string, action: string, owner: string, evidence: string, status: string }>,
-  assumptions: Assumption[],
-  remainingRisks: Finding[],
-  generatedAt: string
-}
-```
+The UI always states that fictional providers are not contacted and no payment is taken.
 
 ## File Structure
 
 ```text
-index.html                         EventReady product experience and app-level WebMCP tools
-judge.html                         Judge Mode and two-minute verification path
-plan.html                          Preserved legacy catering planner, linked from Judge Mode
-vendor.html                        Provider reference site and provider WebMCP tools
-smoke.html                         Minimal native discovery/call verification
-harness.html                       Manual runner for every registered tool
-gradient.html                      T0–T4 source comparison
-
-data/
-  event/demo-fundraiser.json       Canonical end-to-end demo brief
-  vendors/*.json                   Existing catering/rental/staffing fixtures
-  venues/riverside-hall.json       Venue capability/obligation fixture
-
-engine/
-  engine.js                        Existing quantity, coverage, obligation, timing checks
-  assumptions.js                   Existing provenance and confirmation behavior
-  options.js                       Existing alternative generation/ranking
-  replan.js                        Existing delta calculation
-  schedule.js                      Existing local-time job schedule
-  trust.js                         Existing allowlist and injection quarantine
-  readiness.js                     NEW domain mapping, assignment overlay, readiness state
-  readiness.test.mjs              NEW readiness and assignment tests
-  event-contracts.test.mjs         NEW app/provider/run-of-show contract tests
+index.html                         Application entry and accessible shell
+developers.html                    Technical/WebMCP reference surface
 
 shared/
-  plan.js                          Existing catering composition and plan assembly
-  eventready.js                    NEW EventSession orchestration and run-of-show derivation
-  eventready-ui.js                 NEW product renderers and interactions
-  vendor-tools.js                  Extended provider capability/requirements contracts
-  webmcp.js                        Existing native/fallback registration bridge
-  ui.js                            Shared escaping, formatting, and header behavior
-  ui.css                           Product components and print styles
+  eventready.js                    Existing engine-facing EventSession
+  eventready-ui.js                 Thin bootstrap and event wiring
+  product/
+    state.js                       Route, phase, selection, and proposal UI state
+    start-view.js                  Brief-first start experience
+    shape-view.js                  Guided questions and live-plan preview
+    workspace-view.js              Command-center phase shell
+    plan-view.js                   Connected event-plan phases and next decisions
+    source-view.js                 Provider comparison and test commitment
+    coordinate-view.js             Ownership, dependencies, and budget
+    prepare-view.js                Readiness evidence and resolution proposals
+    run-view.js                    Operational run-of-show
+    proposal-sheet.js              Review/apply/cancel action proposals
+    format.js                      Shared display formatting and safe rendering
+  product.css                      Shell, layout, responsive, and state styling
+  tokens.css                       Consolidated product tokens
 
-docs/hackathon-build/              Scope, PRD, spec, checklist, notes
-README.md                          Product story, quick judge path, architecture, provenance
-vercel.json                        Static hosting/cache headers
+engine/                            Existing deterministic engine and tests
+data/                              Existing event, venue, and provider fixtures
+docs/hackathon-build/              Product planning and handoff documentation
 ```
+
+Modules may be consolidated if a file would contain less than one coherent component; responsibility boundaries remain explicit.
 
 ## Data Flow
 
-1. `demo-fundraiser.json` or user form input enters `shared/eventready.js` as an `EventBrief`.
-2. `parseOccasion` and the assumption engine normalize values and record provenance.
-3. Provider fixtures are admitted through `engine/trust.js`; unknown fields and agent-directed text are removed/quarantined.
-4. Existing composition logic creates and ranks food-service options.
-5. Provider requirements plus venue/equipment/staffing capabilities become responsibility rows.
-6. `engine/readiness.js` overlays explicit human assignments, groups coverage into domains, and derives blockers, risks, counts, score, and state.
-7. `shared/eventready-ui.js` renders the same report returned by app-level WebMCP tools.
-8. A user decision updates the in-memory `EventSession`, recalculates the plan, and produces a delta.
-9. `buildRunOfShow()` merges the existing schedule with responsibility assignments, sorts in event-local time, and labels the output Draft or Ready.
-10. Copy/print serializes the current derived artifact; no backend write occurs.
+1. A description enters `start-view.js`.
+2. `EventSession` parses it into a structured brief with provenance.
+3. `shape-view.js` renders questions from missing or assumed fields and a live snapshot.
+4. Each edit updates the session and refreshes only affected preview sections.
+5. “Build my plan” runs assessment and enters the first incomplete phase.
+6. The plan view derives phase status from requirements, provider selection, ownership, and readiness.
+7. Source renders ranked engine options; selecting one creates a reviewable local test commitment.
+8. Coordinate and Prepare construct `ChangeProposal` previews before mutation.
+9. Applying a proposal invokes the corresponding narrow EventSession/WebMCP action and rerenders the same state returned to agents.
+10. Run becomes Ready only when deterministic readiness allows it.
+11. Copy/print serializes the current run-of-show; developer surfaces expose parallel WebMCP evidence.
 
-## Components And Responsibilities
+## WebMCP Mapping
 
-### Event brief form
+- Start/Shape: `get_event_brief`, `assess_event_readiness`, `confirm_event_assumption`.
+- Source: `select_event_plan`, `change_service_level`.
+- Coordinate: `assign_responsibility`.
+- Prepare: `get_readiness_report` plus applicable mutating tools.
+- Run: `get_run_of_show`.
+- Recovery: `reset_demo_event`.
 
-Implements: `prd.md > Epic 1: Create an event brief`
-
-- Prefilled canonical scenario.
-- Structured fields plus optional prose.
-- Visible provenance and validation.
-- One primary “Assess readiness” action.
-
-### Provider plan
-
-Implements: `prd.md > Epic 2: Evaluate provider capabilities`
-
-- Recommended option and two alternatives.
-- Simple-provider preference and split justification.
-- Provider availability/exclusion evidence.
-- Service-level changes.
-
-### Readiness engine
-
-Implements: `prd.md > Epic 3: Understand readiness`
-
-- Stable domain classification.
-- Deterministic score derived from coverage counts, never opaque AI scoring.
-- Blocker/risk/unowned counts.
-- State machine with Ready requiring zero blockers and zero unowned required responsibilities.
-
-### Resolution controls
-
-Implements: `prd.md > Epic 4: Resolve blockers with the human`
-
-- Owner assignment for obligation rows.
-- Service-level change.
-- Assumption confirmation/correction.
-- Delta output and preserved confirmations.
-
-### Run-of-show renderer
-
-Implements: `prd.md > Epic 5: Produce the ready-to-run artifact`
-
-- Event-local chronological table.
-- Time, action, owner, evidence/status columns.
-- Draft/Ready label, remaining risks, and assumptions.
-- Browser copy and print actions.
-
-### Judge Mode
-
-Implements: `prd.md > Epic 6: Explain and verify the WebMCP implementation`
-
-- Two-minute test sequence.
-- Direct links to native smoke, harness, gradient, legacy planner, repository, and live deployment.
-- Tool inventory and security summary.
-- Clear statement that provider businesses are fictional reference implementations.
-
-## Application-Level WebMCP Tools
-
-The primary page registers tools that operate on and visibly update the same `EventSession` as the human UI:
-
-- `get_event_brief()` — returns the current structured brief and provenance.
-- `assess_event_readiness({ ...brief fields })` — calculates options and readiness.
-- `get_readiness_report()` — returns domains, blockers, risks, and responsibility counts.
-- `select_event_plan({ option_id })` — human/agent selects a displayed option.
-- `assign_responsibility({ responsibility_id, owner, owner_label })` — records an explicit assignment.
-- `change_service_level({ provider, service_level })` — recalculates provider obligations.
-- `confirm_event_assumption({ assumption_id, value })` — confirms/corrects a visible assumption.
-- `get_run_of_show()` — returns the current Draft or Ready artifact.
-- `reset_demo_event()` — restores the canonical scenario.
-
-Mutating tools require explicit, narrow arguments and update visible page state. They never place orders, make payments, or claim a real-world booking.
-
-## External APIs And Dependencies
-
-- No runtime third-party API.
-- No client secrets or environment variables.
-- Vercel serves static files.
-- GitHub hosts the public MIT-licensed source.
-- Browser WebMCP is used when available; the local registry supports deterministic manual testing elsewhere.
-
-## AI Usage
-
-Codex and Claude Code are development tools, not runtime dependencies. At runtime the browser agent calls deterministic WebMCP tools; calculation, ranking, trust filtering, readiness, and scheduling remain inspectable code. This keeps the project’s WebMCP value clear: the model interprets intent and orchestrates tools while the application owns domain rules and visible state.
+The consumer UI and tool callers continue to use one session. Tool results update the visible active phase and persist compatible state.
 
 ## Error Strategy
 
-- **Provider fixture fails to load:** identify the provider as unavailable, continue with remaining providers, and keep critical coverage unknown/blocked.
-- **Invalid brief:** show field-level guidance and do not replace the last valid assessment.
-- **Native WebMCP absent:** product remains usable; Judge Mode directs users to the harness and explains the local registry.
-- **Clipboard unavailable:** leave the artifact visible and offer print.
-- **Unexpected exception:** show an accessible error panel with a reset action; retain the canonical demo path.
+- Invalid brief: preserve entered text, identify the exact issue, and keep Build disabled.
+- Provider unavailable: render the service Unknown/Blocked and continue with other providers.
+- No viable option: explain the uncovered requirement and offer a plan or ownership change.
+- Stale proposal: invalidate and recalculate before Apply.
+- Version mismatch: load the canonical sample and show a nonblocking notice.
+- Native WebMCP absent: preserve the full human UI and link to the harness.
+- Copy failure: show selectable text and retain print.
+- Rendering error: show a contained recovery panel and retain the last valid snapshot.
 
-## Risks And Verification
+## Verification Strategy
 
-### Risk: generalization breaks validated catering behavior
-
-Mitigation: add readiness as an adapter over existing plan outputs instead of rewriting the core. Run all 184 baseline tests after every checklist item.
-
-### Risk: UI claims readiness while required work is unresolved
-
-Mitigation: centralize the state machine in a pure module; tests assert Ready is impossible with blockers or unowned responsibilities.
-
-### Risk: product page and WebMCP tools diverge
-
-Mitigation: both use the same `EventSession`; contract tests call tools and compare returned state with renderer inputs.
-
-### Risk: demo remains technically dense
-
-Mitigation: product-first page, one action per stage, plain-language outcomes, and technical evidence behind Judge Mode.
-
-### Verification layers
-
-1. `npm test` for pure engine, contracts, security, and static-asset guards.
-2. Local HTTP server and browser smoke for product interaction, console errors, copy/print, responsive layout, and accessibility basics.
-3. Harness for every registered tool.
-4. ChatGPT in-app browser for native discovery and cross-tool chaining.
-5. Production HTTP and visual checks after Vercel deployment.
+1. Preserve the 196-test baseline.
+2. Add tests for migrations, phase completion, proposal deltas, and UI/engine synchronization.
+3. Browser-test custom brief → Shape → Build → Source → Commit → Coordinate → Prepare → Run.
+4. Run equivalent mutations through WebMCP and verify visible state parity.
+5. Validate 1440px, 1024px, 768px, and 390px layouts with no page overflow.
+6. Check keyboard order, focus visibility, landmarks, labels, status text, and reduced motion.
+7. Verify every visible number/status is calculated or explicitly labeled sample content.
 
 ## Demo And Submission Flow
 
 ### First 15 seconds
 
-Open the fundraiser scenario and click “Assess readiness.” Show the result: food booked, event still Blocked because operational responsibilities are missing.
+The judge starts “Alex & Jordan’s Wedding.” The split canvas visibly turns the description into requirements, assumptions, services, and milestones.
 
-### Human-agent collaboration
+### Product proof
 
-Ask the agent to explain the blockers and recommend the simplest resolution. Change one provider service level and assign the remaining pickup to a volunteer. The visible UI and tool outputs update together.
+The judge sees the first incomplete phase, compares provider options, and understands operational burden—not just price.
 
-### Wow moment
+### WebMCP wow moment
 
-The final blocker clears, the readiness state changes to Ready, and the chronological run-of-show becomes available.
+An agent changes service level and assigns a responsibility through narrow tools. The proposal shows cost/readiness impact; after approval, the plan moves from Needs decisions to Ready.
+
+### Useful outcome
+
+Run produces a compact chronological plan with time, action, owner, provider evidence, assumptions, and remaining risks.
 
 ### Technical proof
 
-Open Judge Mode briefly: show native tools, the source-gradient insight that requirements exist only at T0, and the hostile provider whose instructions were quarantined.
+The developer surface demonstrates nine tools, source gradient, shared UI/tool state, deterministic ranking, and hostile-provider quarantine.
 
-### Handoff
+## Plan Assessment
 
-End on the shareable run-of-show and the claim: individual sites complete transactions; EventReady verifies the event outcome.
+### What this plan fixes
 
+- Replaces the generic dashboard with an event-specific journey.
+- Makes processing visible during Shape instead of showing unexplained populated state.
+- Gives WebMCP a product role through contextual proposals and state changes.
+- Prevents arbitrary column widths and permanent side-rail compression.
+- Preserves the strongest technical work and 196-test baseline.
+
+### Scope controls
+
+- No Next.js migration.
+- No authentication, database, real marketplace, messaging, or Stripe.
+- No attempt to support every event domain.
+- No decorative AI chat.
+- No claim that a test commitment is a real booking.
+
+### Principal risks
+
+1. **Shape could become a long form.** Limit it to five grouped decisions and keep the live plan visible.
+2. **The command center could relapse into tabs.** Phase status and next decision remain the navigation model.
+3. **Visual polish could consume the build.** Establish the shell and tokens once, then reuse primitives.
+4. **Sample data could undermine credibility.** Label fixtures and demonstrate live recalculation through UI and WebMCP.
+5. **The rebuild could damage proven behavior.** Treat the engine as immutable except for a surfaced contract bug.
+
+### Go/no-go verdict
+
+**Go, with the scope controls above.** This is a credible product rebuild because it changes presentation and UI orchestration while retaining the tested engine. It should materially improve Execution and Potential Impact without weakening WebMCP Leverage. Adding real accounts, payments, or providers now would change the verdict to no-go because infrastructure would displace the judged experience.

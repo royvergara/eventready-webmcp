@@ -45,6 +45,39 @@ test('assigning every remaining seam makes a blocker-free delivered plan ready',
   assert.equal(state.runOfShow.rows.some(r => r.owner === 'Unassigned'), false);
 });
 
+test('ready run-of-show is chronological rather than alphabetic', () => {
+  const s = session();
+  s.assess();
+  s.changeServiceLevel('delivery');
+  const rows = s.assignAll('organizer', 'Roy').runOfShow.rows;
+  const labels = rows.map(row => row.at);
+  assert.ok(labels.indexOf('3pm') < labels.indexOf('by 5pm'));
+  assert.ok(labels.indexOf('by 5:30pm') < labels.indexOf('6pm–9pm'));
+  assert.ok(labels.indexOf('6pm–9pm') < labels.indexOf('after 9pm'));
+});
+
+test('a customized basket replaces the recommendation and recalculates planning truth', () => {
+  const s = session();
+  const assessed = s.assess();
+  const option = assessed.options[0];
+  const oneLine = [{ ...option.items[0], catalogKey:`${option.items[0].vendor}:${option.items[0].id}`, quantity:1 }];
+  const state = s.customizeBasket(oneLine);
+  assert.equal(state.plan.customized, true);
+  assert.equal(state.plan.basket.items.length, 1);
+  assert.equal(state.plan.basket.subtotal, oneLine[0].price);
+  assert.ok(state.plan.basket.shortOz > 0 || state.plan.basket.uncovered.length > 0);
+  assert.ok(state.readiness.blockers.length > 0);
+});
+
+test('service changes preserve a user-customized basket', () => {
+  const s=session(); const assessed=s.assess(); const item=assessed.options[0].items[0];
+  s.customizeBasket([{...item,catalogKey:`${item.vendor}:${item.id}`,quantity:1}]);
+  const changed=s.changeServiceLevel('delivery');
+  assert.equal(changed.plan.customized,true);
+  assert.equal(changed.plan.basket.items.length,1);
+  assert.equal(changed.plan.basket.items[0].id,item.id);
+});
+
 test('the nine product tools are narrow, serialisable contracts', () => {
   const tools = buildEventReadyTools(session());
   assert.equal(tools.length, 9);
@@ -60,7 +93,7 @@ test('the nine product tools are narrow, serialisable contracts', () => {
       tool.name === 'change_service_level' ? { service_level: 'delivery' } :
       tool.name === 'reset_demo_event' ? {} :
       tool.name.startsWith('get_') ? {} :
-      tool.name === 'select_event_plan' ? { option_id: 'covers' } :
+      tool.name === 'select_event_plan' ? { option_id: fresh.snapshot().options[0].id } :
       tool.name === 'assign_responsibility' ? { responsibility_id: 'cleanup--left-to-you', owner: 'organizer' } :
       { assumption_id: 'occasion.headcount', value: 75 })));
   }

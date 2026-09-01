@@ -1,7 +1,23 @@
-import { assemblePlan, buildOptions, ownershipTable, parseOccasion, replan } from './plan.js';
+import { assemblePlan, buildOptions, ownershipTable, parseOccasion, planPickups, replan } from './plan.js';
 import { assignResponsibility, deriveReadiness } from '../engine/readiness.js';
+import { deriveDemand, normalizeItem, runChecks } from '../engine/engine.js';
+import { admitVendors } from '../engine/trust.js';
+import { materializeBasket } from './basket.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
+
+function chronologicalOrder(value) {
+  const when = String(value || '').toLowerCase();
+  if (when === 'confirmed') return -1;
+  if (when === 'that morning') return 8 * 60;
+  if (when.includes('next business day')) return 3 * 1440;
+  const match = when.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/);
+  if (!match) return 2 * 1440;
+  let hour = Number(match[1]) % 12;
+  if (match[3] === 'pm') hour += 12;
+  const minutes = hour * 60 + Number(match[2] || 0);
+  return when.startsWith('after ') ? minutes + 1 : minutes;
+}
 
 function occasionFromBrief(brief) {
   return parseOccasion(brief.description || '', {
@@ -10,7 +26,8 @@ function occasionFromBrief(brief) {
     dietary: clone(brief.dietary || {}),
     venueHasKitchen: !!brief.venue_has_kitchen,
     durationHours: Number(brief.duration_hours || 3),
-    serveAt: brief.serve_at
+    serveAt: brief.serve_at,
+    hostProvides: clone(brief.host_provides || [])
   });
 }
 
@@ -44,6 +61,8 @@ function briefSummary(brief) {
     dietary: clone(brief.dietary || {}),
     venueHasKitchen: !!brief.venue_has_kitchen,
     helpersAvailable: Number(brief.helpers_available || 0),
+    priority: brief.priority || 'coverage',
+    cateringAlreadyBooked: !!brief.catering_already_booked,
     provenance: clone(brief.provenance || {})
   };
 }
@@ -114,15 +133,65 @@ export class EventSession {
     this.plan = changed.plan;
     this.delta = changed.delta;
     this.options = buildOptions(this.plan.baseOccasion || this.plan.occasion, this.vendors, serviceLevel);
+    if (before.customized) return this.customizeBasket(before.basket.items);
+    this.recalculateReadiness();
+    return this.emit();
+  }
+
+  customizeBasket(lines = []) {
+    if (!this.plan) throw new Error('assess the event first');
+    const admitted = admitVendors(this.vendors).vendors;
+    const useOccasion = this.plan.occasion;
+    const items = materializeBasket(lines).map(item => {
+      const normalized = normalizeItem(item).normalized;
+      return { ...item, oz:item.oz ?? normalized.protein_oz, confidence:item.confidence ?? normalized.confidence };
+    });
+    const vendorsUsed = [...new Set(items.map(item => item.vendor).filter(Boolean))];
+    const demand = this.plan.basket?.demand || deriveDemand(useOccasion);
+    const uncovered = Object.entries(useOccasion.dietary || {}).flatMap(([group,needed]) => {
+      const served = items.filter(item => item.category === 'main' && (item.dietary || []).includes(group))
+        .reduce((sum,item) => sum + Number(item.claimed_serves || 0), 0);
+      return served < needed ? [{ group, needed, served, short:needed-served }] : [];
+    });
+    const basket = {
+      ...this.plan.basket,
+      items,
+      subtotal:items.reduce((sum,item) => sum + Number(item.price || 0), 0),
+      vendorsUsed,
+      demand,
+      uncovered,
+      shortOz:Math.max(0,demand.proteinOz-items.filter(item=>item.category==='main').reduce((sum,item)=>sum+Number(item.oz||0),0))
+    };
+    basket.pickups = planPickups(basket,useOccasion,this.serviceLevel);
+    const requirementsByVendor = {};
+    for (const slug of vendorsUsed) {
+      const vendor = admitted.find(item => item.slug === slug);
+      if (!vendor) continue;
+      const level = vendor.service_levels.includes(this.serviceLevel) ? this.serviceLevel : vendor.service_levels[0];
+      const contract = vendor.requirements?.[level] || { requires:[], provides:[] };
+      const selectedResources = items.filter(item=>item.vendor===slug).map(item=>item.provides_resource).filter(Boolean);
+      requirementsByVendor[slug] = {
+        ...contract,
+        provides:vendor.kind === 'caterer' || vendor.kind === 'bakery' ? [...(contract.provides || [])] : [...new Set(selectedResources)],
+        service_level:level,
+        assumed:!!contract.assumed
+      };
+    }
+    const vendorsBySlug = Object.fromEntries(admitted.map(vendor => [vendor.slug,vendor]));
+    const { findings } = runChecks({ basket,occasion:useOccasion,requirementsByVendor,vendorsBySlug });
+    this.plan = { ...this.plan,basket,requirementsByVendor,findings,customized:true };
+    this.delta = { lines:[`Customized the working basket to ${lines.length} catalog line${lines.length===1?'':'s'}.`] };
     this.recalculateReadiness();
     return this.emit();
   }
 
   confirmAssumption(assumptionId, value) {
     if (!this.plan) throw new Error('assess the event first');
+    const before = this.plan;
     const changed = replan(this.plan, this.vendors, { assumption: assumptionId, value });
     this.plan = changed.plan;
     this.delta = changed.delta;
+    if (before.customized) return this.customizeBasket(before.basket.items);
     this.recalculateReadiness();
     return this.emit();
   }
@@ -159,7 +228,7 @@ export class EventSession {
 
   runOfShow() {
     const responsibilities = [...this.readiness.responsibilities]
-      .sort((a, b) => String(a.when).localeCompare(String(b.when)));
+      .sort((a, b) => chronologicalOrder(a.when) - chronologicalOrder(b.when));
     return {
       status: this.readiness.state === 'ready' ? 'ready' : 'draft',
       event: briefSummary(this.brief),
@@ -183,7 +252,13 @@ export class EventSession {
       serviceLevel: this.serviceLevel,
       options: this.options.map(o => ({
         id: o.id, label: o.label, summary: o.summary, recommended: o.recommended,
-        subtotal: o.subtotal, vendorCount: o.vendorCount, blockers: o.blockers
+        subtotal: o.subtotal, vendorCount: o.vendorCount, blockers: o.blockers,
+        uncovered: clone(o.uncovered || []), shortOz: o.shortOz || 0,
+        collections: o.collections || 0, itemCount: o.itemCount || 0,
+        items: clone(o.plan?.basket?.items || []),
+        pickups: clone(o.plan?.basket?.pickups || []),
+        findings: clone(o.plan?.findings || []),
+        requirementsByVendor: clone(o.plan?.requirementsByVendor || {})
       })),
       selectedOptionId: this.selectedOptionId,
       plan: this.plan,
@@ -271,10 +346,9 @@ export function buildEventReadyTools(session, onChange = () => {}) {
     },
     {
       name: 'reset_demo_event',
-      description: 'Reset EventReady to the canonical 75-person fundraiser scenario.',
+      description: 'Reset EventReady to the canonical 120-person wedding scenario.',
       inputSchema: { type: 'object', properties: {} },
       run: mutate(() => session.reset())
     }
   ];
 }
-

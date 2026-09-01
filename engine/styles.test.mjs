@@ -13,9 +13,29 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 const pages = readdirSync('.').filter(f => f.endsWith('.html'));
 const tailwind = readFileSync('shared/tailwind.css', 'utf8');
 const components = readFileSync('shared/ui.css', 'utf8');
+const componentSelectors = readdirSync('shared')
+  .filter(file => file.endsWith('.css') && file !== 'tailwind.css')
+  .map(file => readFileSync(`shared/${file}`, 'utf8'))
+  .join('\n');
+
+test('the create-another-event action only appears inside a workspace', () => {
+  const html = readFileSync('index.html', 'utf8');
+  const ui = readFileSync('shared/eventready-ui.js', 'utf8');
+  assert.match(html, /id="newEventButton"[^>]*hidden[^>]*>Create another event/);
+  assert.match(ui, /newEventButton'\)\.hidden = route !== 'workspace'/);
+  assert.match(html, /id="planActivity"[^>]*aria-labelledby="planActivityTitle"/);
+  assert.match(ui, /recordImpact\(message, actor='You', channel='Interface'\)/);
+  assert.match(ui, /'EventReady agent',tool\.name/);
+  assert.match(ui, /tool\.name === 'select_event_plan'[\s\S]*booking=\{/,
+    'an agent plan selection must create the same visible working-plan record as the interface');
+  assert.match(ui, /tool\.name === 'reset_demo_event'[\s\S]*eventOps = createEventOps\(\)/,
+    'the demo reset must clear both engine and visible operational state');
+  assert.match(ui, /!\['get_event_brief','get_readiness_report','get_run_of_show'\]\.includes\(tool\.name\)/,
+    'read-only WebMCP calls must not create mutation receipts');
+});
 
 // Class names our own stylesheet defines: .chit, .btn, .row-name, .tape …
-const OWN = new Set([...components.matchAll(/\.([a-zA-Z][\w-]*)/g)].map(m => m[1]));
+const OWN = new Set([...componentSelectors.matchAll(/\.([a-zA-Z][\w-]*)/g)].map(m => m[1]));
 
 // Tailwind escapes anything outside [A-Za-z0-9-] in a selector, and uses the CSS
 // numeric escape for a comma: text-[clamp(1rem,2vw,3rem)] becomes

@@ -1,0 +1,18 @@
+{
+  "slug": "cedar-house",
+  "name": "Cedar House",
+  "tier": "T0",
+  "kind": "venue",
+  "capacity": 150,
+  "requirements": {
+    "space_only": {
+      "provides": ["access_30min_before", "tables", "chairs", "parking"],
+      "requires": ["vendor_coordination", "setup", "cleanup"]
+    }
+  },
+  "source": {
+    "tier": "T0",
+    "fetched_at": "2026-08-30T12:00:00-05:00",
+    "confidence": 1
+  }
+}

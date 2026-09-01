@@ -1,0 +1,27 @@
+{
+  "title": "Alex & Jordan's Wedding",
+  "event_type": "wedding",
+  "venue_name": "Cedar House",
+  "description": "120 guests, wedding reception, $35000 budget, 14 vegetarians, 6 vegan, 8 gluten free, no kitchen at the venue",
+  "headcount": 120,
+  "budget": 35000,
+  "serve_at": "2026-10-17T18:00:00-05:00",
+  "duration_hours": 5,
+  "dietary": {
+    "vegetarian": 14,
+    "vegan": 6,
+    "gluten_free": 8
+  },
+  "venue_has_kitchen": false,
+  "helpers_available": 4,
+  "host_provides": [],
+  "provenance": {
+    "title": "given",
+    "headcount": "given",
+    "budget": "given",
+    "serveAt": "given",
+    "durationHours": "given",
+    "dietary": "given",
+    "venueHasKitchen": "given"
+  }
+}

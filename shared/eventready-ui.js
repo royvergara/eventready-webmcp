@@ -1,31 +1,847 @@
 import { esc, label } from './ui.js';
 import { toolHost } from './webmcp.js';
 import { EventSession, buildEventReadyTools } from './eventready.js';
-const $=id=>document.getElementById(id);
-const slugs=['green-fork','masa-y-mas','sweet-bench','casa-vieja','prime-platters','loop-rentals','handoff-staffing'];
-const [vendors,demo,venue]=await Promise.all([Promise.all(slugs.map(s=>fetch(`/data/vendors/${s}.json`).then(r=>r.json()))),fetch('/data/event/demo-fundraiser.json').then(r=>r.json()),fetch('/data/venues/riverside-hall.json').then(r=>r.json())]);
-const session=new EventSession({vendors,demo,venue});
+import { admitVendors } from '../engine/trust.js';
+import { addBasketItem, basketMetrics, basketSubtotal, catalogFromVendors, recommendedBasket, setBasketQuantity, swapBasketItem } from './basket.js';
 
-const categoryMeta={food:['Food & drinks','Dinner, dietary coverage, service and food safety','🍽'],venue:['Venue & access','Arrival windows, parking and room requirements','⌂'],equipment:['Equipment & setup','Tablescape, serving equipment and supplies','◇'],people:['Team & responsibilities','Vendors, volunteers and ownership','◎'],timing:['Schedule','Arrivals, setup, service and cleanup','◷'],budget:['Budget','Committed costs, allowances and contingency','$']};
-function nextAction(row){return `<article class="next-action"><div class="action-icon">${categoryMeta[row.domain]?.[2]||'✓'}</div><div><span>${esc(categoryMeta[row.domain]?.[0]||'Plan')}</span><h3>${esc(label(row.resource))} needs an owner</h3><p>${esc(row.when||'Timing to confirm')} · Required by ${esc(row.evidence)}</p></div><button data-assign="${esc(row.id)}">Assign</button></article>`;}
-function render(state){
- const ready=state.readiness.state==='ready', unresolved=state.readiness.responsibilities.filter(r=>r.status==='unresolved');
- $('decisionCount').textContent=unresolved.length+state.readiness.blockers.length; $('statusHero').className=`status-hero ${ready?'is-ready':'needs-attention'}`; $('statusTitle').textContent=ready?'Your event is ready':'Your event needs a few decisions'; $('statusSummary').textContent=ready?'Critical needs are covered, every required job has an owner, and your day-of plan is ready to share.':'Everything important is visible. Let’s close the gaps between your venue, vendors, and team.'; $('resolveWithAgent').hidden=ready;
- $('nextActions').innerHTML=ready?'<article class="ready-card"><span>✓</span><div><h3>Everything critical is covered</h3><p>Your next step is to share the day-of plan with your team.</p></div><button data-tab-jump="dayof">Open day-of plan</button></article>':unresolved.slice(0,3).map(nextAction).join('');
- $('planCategories').innerHTML=state.readiness.domains.map(d=>{const m=categoryMeta[d.id];const status=d.status==='covered'?'Complete':d.status==='not_applicable'?'On track':`${d.unowned+d.blockers} decisions`;return `<article class="category-card"><div class="category-icon">${m[2]}</div><div><h3>${m[0]}</h3><p>${m[1]}</p></div><span class="category-status ${d.status==='covered'?'complete':''}">${status}</span><button aria-label="Open ${m[0]}">→</button></article>`}).join('');
- const grouped={provider:state.readiness.responsibilities.filter(r=>r.owner==='provider'),organizer:state.readiness.responsibilities.filter(r=>r.owner==='organizer'),unassigned:unresolved}; $('teamList').innerHTML=[['Providers','Committed through vendor agreements',grouped.provider],['Roy · Organizer','Your assigned responsibilities',grouped.organizer],['Still unassigned','Decide who will own these',grouped.unassigned]].map(([name,sub,rows])=>`<article class="team-card"><header><div class="team-avatar">${name.slice(0,2).toUpperCase()}</div><div><h3>${name}</h3><p>${sub}</p></div><span>${rows.length} jobs</span></header><div>${rows.slice(0,8).map(r=>`<p><span>${esc(label(r.resource))}</span><small>${esc(r.when||'Confirm timing')}</small>${r.status==='unresolved'?`<button data-assign="${esc(r.id)}">Assign to Roy</button>`:'<i>✓</i>'}</p>`).join('')||'<p class="empty-team">No responsibilities here.</p>'}</div></article>`).join('');
- $('runHeading').textContent=ready?'Your event is ready to run':'Your working run-of-show'; $('runDescription').textContent=ready?'Every row has an owner and evidence from the event plan.':'This remains a draft until every critical need and responsibility is resolved.'; $('dayofBanner').className=`dayof-banner ${ready?'ready':''}`; $('dayofBanner').innerHTML=ready?'<span>Ready</span><p>Share this plan with your vendors and event team.</p>':'<span>Draft</span><p>Resolve the remaining decisions before sharing this with your team.</p>'; $('runRows').innerHTML=state.runOfShow.rows.map(r=>`<article><time>${esc(r.at)}</time><i></i><div><h3>${esc(r.action)}</h3><p>${esc(r.owner)} · ${esc(r.evidence)}</p></div></article>`).join('');
- document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>session.assign(b.dataset.assign,'organizer','Roy · Organizer')); bindJumps();
+const $ = id => document.getElementById(id);
+const slugs = ['cedar-and-salt','green-fork','masa-y-mas','sweet-bench','casa-vieja','prime-platters','loop-rentals','handoff-staffing'];
+const [vendors,demo,venue] = await Promise.all([
+  Promise.all(slugs.map(slug => fetch(`/data/vendors/${slug}.json`).then(response => response.json()))),
+  fetch('/data/event/demo-wedding.json').then(response => response.json()),
+  fetch('/data/venues/cedar-house.json').then(response => response.json())
+]);
+
+const session = new EventSession({ vendors, demo, venue });
+const admittedVendors = admitVendors(vendors).vendors;
+const catalog = catalogFromVendors(admittedVendors);
+const STATE_KEY = 'eventready:v6:application';
+const BOOKING_KEY = 'eventready:v6:test-booking';
+const EVENTS_KEY = 'eventready:v7:events';
+const PHASES = ['shape','source','coordinate','prepare','run'];
+let booking = parseStored(BOOKING_KEY);
+let eventStore = parseStored(EVENTS_KEY) || { version:1, events:{} };
+let currentEventId = null;
+let appState = { route:'start', activePhase:'shape', shapeStep:0, proposal:null, packageOptionId:null, catalogMode:null, replaceBasketKey:null, pendingBrief:null, runSheetExpanded:false };
+let eventOps = createEventOps();
+let toastTimer;
+let overlayReturnFocus=null;
+restoreBookingRefinement();
+
+function createEventOps() {
+  return {
+    team:[
+      { id:'roy', name:'Roy', role:'Organizer', contact:'roy@example.com' },
+      { id:'maya', name:'Maya', role:'Day-of lead', contact:'(512) 555-0142' },
+      { id:'jordan', name:'Jordan', role:'Host', contact:'jordan@example.com' }
+    ],
+    assignmentPeople:{}, assignmentAcceptance:{},
+    commitmentStatus:'draft',
+    commitmentUpdatedAt:null,
+    lastImpact:null,
+    confirmation:{provider:false,terms:false,deposit:false,finalCount:false,venueAccess:false},
+    ledger:{venue:0,taxRate:8.25,gratuityRate:18,depositRate:30,depositPaid:false},
+    packageRefinement:{serviceLevel:'pickup',guestCount:null,notes:'',addCleanup:false,baskets:{}},
+    completedRows:{}, customTasks:[]
+    ,activity:[]
+  };
 }
-function activateTab(name){document.querySelectorAll('.workspace-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.workspace-view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));window.scrollTo({top:0,behavior:'smooth'});}
-function bindJumps(){document.querySelectorAll('[data-tab-jump]').forEach(b=>b.onclick=()=>activateTab(b.dataset.tabJump));}
-document.querySelectorAll('.workspace-tab').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));bindJumps();
-session.subscribe(render);session.assess();render(session.snapshot());
-for(const tool of buildEventReadyTools(session,render))toolHost().registerTool({...tool,execute:async input=>({content:[{type:'text',text:JSON.stringify(tool.run(input||{}))}]})});
 
-const showProposal=()=>{$('proposalModal').hidden=false;}; const hideProposal=()=>{$('proposalModal').hidden=true;}; $('resolveWithAgent').onclick=showProposal;$('reviewChanges').onclick=showProposal;$('closeProposal').onclick=hideProposal;$('cancelProposal').onclick=hideProposal;
-$('applyProposal').onclick=()=>{session.changeServiceLevel('delivery');session.assignAll('organizer','Roy · Organizer');hideProposal();$('assistantMessages').innerHTML='<div class="assistant-message success"><span>✓ Changes applied</span><p>I switched catering to delivery and assigned the remaining operational work to Roy. The event is now ready, and I updated the day-of plan.</p></div><button class="assistant-cta" data-tab-jump="dayof">Open ready plan</button>';bindJumps();};
-$('assignTeam').onclick=()=>session.assignAll('organizer','Roy · Organizer');
-$('assistantInput').onkeydown=e=>{if(e.key==='Enter')$('sendAssistant').click();}; $('sendAssistant').onclick=()=>{const q=$('assistantInput').value.trim();if(!q)return;$('assistantMessages').insertAdjacentHTML('beforeend',`<div class="user-message">${esc(q)}</div><div class="assistant-message"><p>I can help with that. For this demo, try my recommended readiness plan to resolve the open operational work.</p></div>`);$('assistantInput').value='';};
-$('newEvent').onclick=()=>{$('newEventModal').hidden=false;};$('closeNewEvent').onclick=$('cancelNewEvent').onclick=()=>{$('newEventModal').hidden=true;};$('closeAssistant').onclick=()=>document.querySelector('.assistant-panel').classList.toggle('collapsed');
-$('printRun').onclick=()=>window.print();$('copyRun').onclick=async()=>{const run=session.runOfShow();const text=[`${run.event.title} — ${run.status.toUpperCase()}`,...run.rows.map(r=>`${r.at} | ${r.action} | ${r.owner}`)].join('\n');try{await navigator.clipboard.writeText(text);$('copyRun').textContent='Copied';}catch{window.prompt('Copy the day-of plan:',text);}setTimeout(()=>{$('copyRun').textContent='Copy plan';},1200);};
+function restoreBookingRefinement() {
+  if (!booking?.refinement) return;
+  eventOps.packageRefinement={...eventOps.packageRefinement,...booking.refinement,baskets:{...(booking.refinement.baskets||{})}};
+  if (booking.refinement.basket?.length && booking.optionId) {
+    eventOps.packageRefinement.baskets[booking.optionId]={lines:JSON.parse(JSON.stringify(booking.refinement.basket)),customized:true,updatedAt:booking.createdAt};
+  }
+}
+
+const stored = parseStored(STATE_KEY);
+if (stored?.version === 1 && stored.brief) session.brief = { ...session.brief, ...stored.brief };
+
+function parseStored(key) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+}
+
+function persist() {
+  localStorage.setItem(STATE_KEY, JSON.stringify({ version:1, brief:session.snapshot().rawBrief }));
+  if (booking) localStorage.setItem(BOOKING_KEY, JSON.stringify(booking));
+  else localStorage.removeItem(BOOKING_KEY);
+  if (currentEventId) {
+    const state = session.snapshot();
+    eventStore.events[currentEventId] = {
+      id:currentEventId,
+      brief:state.rawBrief,
+      booking:booking ? {...booking} : null,
+      selectedOptionId:state.selectedOptionId,
+      serviceLevel:state.serviceLevel,
+      assignments:{...session.assignments},
+      ops:JSON.parse(JSON.stringify(eventOps)),
+      readiness:state.readiness.state,
+      open:state.readiness.blockers.length + state.readiness.responsibilities.filter(row=>row.status==='unresolved').length,
+      updatedAt:new Date().toISOString()
+    };
+    localStorage.setItem(EVENTS_KEY,JSON.stringify(eventStore));
+  }
+  renderSavedEvents();
+  if (currentEventId && $('saveStatus')) {
+    $('saveStatus').hidden=false;
+    $('saveStatus').textContent='Saved just now';
+  }
+}
+
+function showToast(message) {
+  const toast=$('appToast');
+  if (!toast) return;
+  clearTimeout(toastTimer);
+  toast.textContent=message;
+  toast.hidden=false;
+  requestAnimationFrame(()=>toast.classList.add('visible'));
+  toastTimer=setTimeout(()=>{toast.classList.remove('visible');setTimeout(()=>toast.hidden=true,180);},3200);
+}
+
+function recordImpact(message, actor='You', channel='Interface') {
+  const at=new Date().toISOString();
+  eventOps.lastImpact={message,at};
+  eventOps.activity=[{message,actor,channel,at},...(eventOps.activity||[])].slice(0,12);
+  showToast(message);
+}
+
+function openOverlay(id, opener=document.activeElement) {
+  const overlay=$(id);
+  if (!overlay) return;
+  if (opener instanceof HTMLElement && !opener.closest('.overlay')) overlayReturnFocus=opener;
+  overlay.hidden=false;
+  document.body.classList.add('has-overlay');
+  requestAnimationFrame(()=>overlay.querySelector('[role="dialog"]')?.focus());
+}
+
+function closeOverlay(id, { restoreFocus=true }={}) {
+  const overlay=$(id);
+  if (!overlay) return;
+  overlay.hidden=true;
+  if (!document.querySelector('.overlay:not([hidden])')) document.body.classList.remove('has-overlay');
+  if (restoreFocus) {
+    if (overlayReturnFocus?.isConnected) overlayReturnFocus.focus();
+    overlayReturnFocus=null;
+  }
+}
+
+document.addEventListener('keydown',event=>{
+  const overlay=document.querySelector('.overlay:not([hidden])');
+  if (!overlay) return;
+  if (event.key==='Escape') {
+    event.preventDefault();
+    overlay.querySelector('button[aria-label="Close"], footer .secondary-button, footer .primary-button')?.click();
+    return;
+  }
+  if (event.key!=='Tab') return;
+  const focusable=[...overlay.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(item=>item.getClientRects().length);
+  if (!focusable.length) return;
+  const first=focusable[0],last=focusable.at(-1);
+  if (event.shiftKey && document.activeElement===first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement===last) { event.preventDefault(); first.focus(); }
+});
+
+function eventIdFor(brief) {
+  return `${String(brief.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}-${Date.now().toString(36)}`;
+}
+
+function restoreEvent(id) {
+  const saved = eventStore.events[id];
+  if (!saved) return;
+  currentEventId = id;
+  booking = saved.booking ? {...saved.booking} : null;
+  session.brief = {...saved.brief};
+  eventOps = {...createEventOps(), ...(saved.ops || {}), confirmation:{...createEventOps().confirmation,...(saved.ops?.confirmation||{})}, ledger:{...createEventOps().ledger,...(saved.ops?.ledger||{})}, packageRefinement:{...createEventOps().packageRefinement,...(saved.ops?.packageRefinement||{}),baskets:{...(saved.ops?.packageRefinement?.baskets||{})}}};
+  session.assess();
+  if (saved.selectedOptionId && session.snapshot().options.some(option=>option.id===saved.selectedOptionId)) session.selectPlan(saved.selectedOptionId);
+  if (saved.serviceLevel && saved.serviceLevel !== 'pickup') session.changeServiceLevel(saved.serviceLevel);
+  if (saved.booking?.refinement?.basket?.length) session.customizeBasket(saved.booking.refinement.basket);
+  for (const [id,assignment] of Object.entries(saved.assignments || {})) session.assign(id,assignment.owner,assignment.ownerLabel);
+  appState.activePhase=firstIncompletePhase(session.snapshot());
+  renderWorkspace(session.snapshot());
+  showRoute('workspace');
+}
+
+function renderSavedEvents() {
+  if (!$('savedEventsList')) return;
+  const events = Object.values(eventStore.events).filter(item=>item.id!=='sample-wedding').sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
+  $('savedEventsSection').hidden = events.length === 0;
+  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue →</span></button>`).join('');
+  document.querySelectorAll('[data-open-event]').forEach(button=>button.onclick=()=>restoreEvent(button.dataset.openEvent));
+}
+
+function currentBooking(state = session.snapshot()) {
+  return booking?.eventId === currentEventId || (!booking?.eventId && booking?.eventTitle === state.brief.title) ? booking : null;
+}
+
+function showRoute(route) {
+  appState.route = route;
+  $('startView').hidden = route !== 'start';
+  $('shapeView').hidden = route !== 'shape';
+  $('workspaceView').hidden = route !== 'workspace';
+  $('newEventButton').hidden = route !== 'workspace';
+  if (route === 'start') renderSavedEvents();
+  document.body.dataset.route = route;
+  document.body.dataset.eventType = route === 'start' ? 'default' : String(session.brief.event_type || 'event').replaceAll(' ','-');
+  document.title = route === 'start' ? 'EventReady · The whole event, held together' : `${session.snapshot().brief.title} · EventReady`;
+  window.scrollTo({ top:0, behavior:'instant' });
+}
+
+function eventFromDescription(description) {
+  const lower = description.toLowerCase();
+  const wedding = lower.includes('wedding');
+  const work = lower.includes('off-site') || lower.includes('work event') || lower.includes('company');
+  const community = lower.includes('fundraiser') || lower.includes('community');
+  const celebration = lower.includes('birthday') || lower.includes('celebration');
+  const headcountMatch=description.match(/(\d[\d,]*)\s*(?:guests|people|attendees)/i);
+  const budgetMatch=description.match(/\$\s?(\d[\d,]*)/);
+  const headcount = Number(headcountMatch?.[1]?.replaceAll(',','')) || 75;
+  const budget = Number(budgetMatch?.[1]?.replaceAll(',','')) || 15000;
+  const dietary = {
+    vegetarian:Number(description.match(/(\d+)\s*vegetarian/i)?.[1]) || 0,
+    vegan:Number(description.match(/(\d+)\s*vegan/i)?.[1]) || 0,
+    gluten_free:Number(description.match(/(\d+)\s*gluten[- ]free/i)?.[1]) || 0
+  };
+  return {
+    ...demo,
+    title:wedding ? 'Wedding Reception' : work ? 'Team Gathering' : community ? 'Community Fundraiser' : celebration ? 'Milestone Celebration' : 'My Event',
+    event_type:wedding ? 'wedding' : work ? 'work event' : community ? 'community event' : celebration ? 'celebration' : 'event',
+    description, headcount, budget,
+    dietary,
+    venue_name:'Venue to confirm',
+    priority:'coverage',
+    catering_already_booked:/cater(?:ing|er).*(?:booked|confirmed)/i.test(description),
+    host_provides:[],
+    provenance:{title:'inferred',headcount:headcountMatch?'given':'assumed',budget:budgetMatch?'given':'assumed',serveAt:'assumed',durationHours:'assumed',dietary:Object.values(dietary).some(Boolean)?'given':'needed',venueHasKitchen:'needed',venueName:'needed'}
+  };
+}
+
+function startShaping(description) {
+  session.brief = appState.pendingBrief || eventFromDescription(description);
+  appState.pendingBrief=null;
+  currentEventId = eventIdFor(session.brief);
+  booking = null;
+  eventOps = createEventOps();
+  appState.shapeStep = 0;
+  hydrateShapeFields();
+  renderShape();
+  showRoute('shape');
+}
+
+function openBriefReview(description) {
+  const brief=eventFromDescription(description);
+  appState.pendingBrief=brief;
+  $('reviewTitle').value=brief.title;
+  $('reviewType').value=['wedding','work event','celebration','community event'].includes(brief.event_type)?brief.event_type:'celebration';
+  $('reviewGuests').value=brief.headcount;
+  $('reviewBudget').value=brief.budget;
+  $('reviewGuestsSource').textContent=brief.provenance.headcount==='given'?'From your description':'Assumed — confirm';
+  $('reviewBudgetSource').textContent=brief.provenance.budget==='given'?'From your description':'Assumed — confirm';
+  const needs=Object.entries(brief.dietary).filter(([,count])=>count>0);
+  $('briefReviewNeeds').innerHTML=`<strong>Dietary needs detected</strong><div>${needs.length?needs.map(([kind,count])=>`<span>${count} ${esc(label(kind))}</span>`).join(''):'<span>None mentioned yet</span>'}</div>`;
+  openOverlay('briefReviewOverlay');
+}
+
+function confirmBriefReview() {
+  if (!appState.pendingBrief) return;
+  appState.pendingBrief={...appState.pendingBrief,title:$('reviewTitle').value.trim()||'My Event',event_type:$('reviewType').value,headcount:Math.max(1,Number($('reviewGuests').value)||1),budget:Math.max(0,Number($('reviewBudget').value)||0)};
+  closeOverlay('briefReviewOverlay',{restoreFocus:false});
+  startShaping(appState.pendingBrief.description);
+}
+
+function hydrateShapeFields() {
+  const brief = session.brief;
+  $('fieldTitle').value = brief.title;
+  $('fieldType').value = ['wedding','work event','celebration','community event'].includes(brief.event_type) ? brief.event_type : 'celebration';
+  $('fieldVenue').value = brief.venue_name === 'Venue to confirm' ? '' : (brief.venue_name || '');
+  $('fieldKitchen').checked = !!brief.venue_has_kitchen;
+  $('fieldGuests').value = brief.headcount || 1;
+  $('fieldVegetarian').value = brief.dietary?.vegetarian || 0;
+  $('fieldVegan').value = brief.dietary?.vegan || 0;
+  $('fieldGlutenFree').value = brief.dietary?.gluten_free || 0;
+  $('fieldBudget').value = brief.budget || 0;
+  $('fieldPriority').value = brief.priority || 'coverage';
+  $('fieldHelpers').value = brief.helpers_available || 0;
+  $('fieldFoodBooked').checked = !!currentBooking();
+  $('fieldEquipmentHandled').checked = (brief.host_provides || []).includes('warming_trays');
+  const date = String(brief.serve_at || demo.serve_at).slice(0,10);
+  const time = String(brief.serve_at || demo.serve_at).slice(11,16);
+  $('fieldDate').value = date;
+  $('fieldTime').value = time;
+}
+
+function updateBriefFromFields() {
+  const date = $('fieldDate').value || String(demo.serve_at).slice(0,10);
+  const time = $('fieldTime').value || '18:00';
+  const headcount = Math.max(1, Number($('fieldGuests').value) || 1);
+  const dietary = {
+    vegetarian:Math.max(0,Number($('fieldVegetarian').value)||0),
+    vegan:Math.max(0,Number($('fieldVegan').value)||0),
+    gluten_free:Math.max(0,Number($('fieldGlutenFree').value)||0)
+  };
+  session.brief = {
+    ...session.brief,
+    title:$('fieldTitle').value.trim() || 'My Event',
+    event_type:$('fieldType').value,
+    venue_name:$('fieldVenue').value.trim() || 'Venue to confirm',
+    venue_has_kitchen:$('fieldKitchen').checked,
+    headcount,
+    dietary,
+    budget:Math.max(0,Number($('fieldBudget').value)||0),
+    priority:$('fieldPriority').value,
+    helpers_available:Math.max(0,Number($('fieldHelpers').value)||0),
+    catering_already_booked:$('fieldFoodBooked').checked,
+    host_provides:$('fieldEquipmentHandled').checked ? ['warming_trays','fuel','serving_utensils'] : [],
+    serve_at:`${date}T${time}:00-05:00`,
+    description:`${headcount} guests, ${$('fieldType').value}, $${Math.max(0,Number($('fieldBudget').value)||0)} budget, ${dietary.vegetarian} vegetarians, ${dietary.vegan} vegan, ${dietary.gluten_free} gluten free${$('fieldKitchen').checked?'':' , no kitchen at the venue'}`
+  };
+}
+
+function renderShape() {
+  updateBriefFromFields();
+  const brief = session.brief;
+  document.querySelectorAll('.shape-step').forEach((step,index) => step.classList.toggle('active', index === appState.shapeStep));
+  $('shapeProgressText').textContent = `Step ${appState.shapeStep + 1} of 5`;
+  $('shapeProgressBar').style.width = `${(appState.shapeStep + 1) * 20}%`;
+  $('shapeProgressTrack').setAttribute('aria-valuenow',String(appState.shapeStep+1));
+  $('shapePrevious').hidden = appState.shapeStep === 0;
+  $('shapeNext').hidden = appState.shapeStep === 4;
+  $('buildPlan').hidden = appState.shapeStep !== 4;
+  $('previewType').textContent = label(brief.event_type);
+  $('previewTitle').textContent = brief.title;
+  const date = new Date(brief.serve_at);
+  $('previewMeta').textContent = `${date.toLocaleDateString('en-US',{month:'long',day:'numeric'})} · ${brief.venue_name}`;
+  $('previewGuests').textContent = Number(brief.headcount).toLocaleString();
+  $('previewBudget').textContent = `$${Number(brief.budget).toLocaleString()}`;
+  const needs = Object.entries(brief.dietary || {}).filter(([,count]) => count > 0);
+  $('previewNeeds').textContent = needs.length;
+  const requirements = [
+    `${brief.headcount} guest capacity`,
+    brief.venue_has_kitchen ? 'Venue kitchen available' : 'No venue kitchen',
+    ...needs.map(([kind,count]) => `${count} ${label(kind)}`),
+    `${brief.helpers_available || 0} available helpers`,
+    `$${Number(brief.budget).toLocaleString()} ceiling`,
+    `${label(brief.priority || 'coverage')} priority`,
+    brief.catering_already_booked ? 'Catering already handled' : 'Catering still to source',
+    (brief.host_provides || []).includes('warming_trays') ? 'Serving equipment handled' : 'Serving equipment still needed'
+  ];
+  $('previewRequirements').innerHTML = requirements.map(item => `<span>${esc(item)}</span>`).join('');
+}
+
+function buildPlan() {
+  updateBriefFromFields();
+  session.assess();
+  if (session.brief.catering_already_booked && !booking) {
+    const selected=session.snapshot().options.find(option=>option.id===session.snapshot().selectedOptionId);
+    booking={optionId:selected?.id,subtotal:selected?.subtotal||0,total:selected?.subtotal||0,label:'Existing catering provider',eventId:currentEventId,eventTitle:session.brief.title,status:'existing',createdAt:new Date().toISOString()};
+    eventOps.commitmentStatus='confirmed';
+    eventOps.confirmation.provider=true;
+  }
+  persist();
+  appState.activePhase = firstIncompletePhase(session.snapshot());
+  renderWorkspace(session.snapshot());
+  $('planReadySummary').textContent = `${session.brief.title} now has a structured brief and ${session.snapshot().readiness.responsibilities.length} operational responsibilities to coordinate.`;
+  openOverlay('planReadyOverlay');
+}
+
+function phaseState(state) {
+  const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved').length;
+  const committed = !!currentBooking(state);
+  return {
+    shape:true,
+    source:committed,
+    coordinate:committed && unresolved === 0,
+    prepare:operationalState(state).status === 'ready',
+    run:operationalState(state).status === 'ready'
+  };
+}
+
+function firstIncompletePhase(state) {
+  const status = phaseState(state);
+  return PHASES.find(phase => !status[phase]) || 'run';
+}
+
+function formatDate(iso) {
+  const date = new Date(iso);
+  return `${date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})} · ${date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`;
+}
+
+function eventMark(title) {
+  const words = title.replaceAll('&',' ').split(/\s+/).filter(Boolean);
+  return words.slice(0,2).map(word => word[0]).join('').toUpperCase();
+}
+
+function renderWorkspace(state = session.snapshot()) {
+  const status = phaseState(state);
+  const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved');
+  const days = Math.max(0, Math.ceil((new Date(state.brief.serveAt) - new Date()) / 86400000));
+  $('eventTitle').textContent = state.brief.title;
+  $('eventMeta').textContent = `${formatDate(state.brief.serveAt)} · ${state.brief.venueName}`;
+  $('eventAccent').textContent = eventMark(state.brief.title);
+  $('eventKindLabel').textContent = currentEventId === 'sample-wedding' ? 'SAMPLE PLAN' : 'SAVED EVENT';
+  const openCount = unresolved.length + state.readiness.blockers.length;
+  const operating=operationalState(state);
+  $('eventHealth').textContent = operating.status === 'ready' ? 'Ready to run' : operating.status === 'confirmations' ? 'Confirmations pending' : `${openCount} decision${openCount===1?'':'s'} remaining`;
+  $('eventCountdown').textContent = `${days} days to go`;
+  document.querySelectorAll('[data-phase]').forEach(button => {
+    const phase = button.dataset.phase;
+    const active=phase === appState.activePhase;
+    button.classList.toggle('active', active);
+    button.classList.toggle('done', status[phase]);
+    if (active) button.setAttribute('aria-current','step');
+    else button.removeAttribute('aria-current');
+    button.setAttribute('aria-label',`${button.querySelector('strong')?.textContent || label(phase)} phase, ${active?'current':status[phase]?'complete':'not complete'}`);
+  });
+  renderShapePhase(state);
+  renderSourcePhase(state);
+  renderCoordinatePhase(state);
+  renderPreparePhase(state);
+  renderRunPhase(state);
+  renderActivity();
+  activatePhase(appState.activePhase, false);
+  bindDynamicActions();
+}
+
+function renderActivity() {
+  const target=$('planActivity');
+  if (!target) return;
+  const entries=eventOps.activity||[];
+  target.innerHTML=`<header><div><h2 id="planActivityTitle">Shared plan activity</h2><p>Human and agent changes leave the same visible receipt.</p></div><span>${entries.length} recorded</span></header>${entries.length?`<ol>${entries.slice(0,6).map(entry=>`<li><div><strong>${esc(entry.message)}</strong><span>${esc(entry.actor)} · ${esc(entry.channel)}</span></div><time datetime="${esc(entry.at)}">${new Date(entry.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</time></li>`).join('')}</ol>`:'<p class="activity-empty">Changes made in the interface or through a WebMCP Action will appear here.</p>'}`;
+}
+
+function phaseHeader(kicker,title,description,done,labelText='Complete') {
+  return `<header class="phase-head"><div><span class="kicker">${esc(kicker)}</span><h2>${esc(title)}</h2><p>${esc(description)}</p></div><span class="phase-status ${done?'done':''}">${esc(done?labelText:'In progress')}</span></header>`;
+}
+
+function nextAction(title,button,attribute) {
+  return `<aside class="next-action"><div><span>NEXT BEST ACTION</span><strong>${esc(title)}</strong></div><button class="primary-button" ${attribute}>${esc(button)} →</button></aside>${impactBanner()}`;
+}
+
+function impactBanner() {
+  if (!eventOps.lastImpact) return '';
+  return `<aside class="impact-banner"><span>✓</span><div><strong>Plan updated</strong><small>${esc(eventOps.lastImpact.message)}</small></div><button data-dismiss-impact type="button" aria-label="Dismiss update">×</button></aside>`;
+}
+
+function renderShapePhase(state) {
+  const open = state.readiness.responsibilities.filter(row => row.status === 'unresolved').length + state.readiness.blockers.length;
+  const needs = Object.entries(state.brief.dietary).filter(([,count]) => count > 0).map(([kind,count]) => `${count} ${label(kind)}`).join(', ') || 'None recorded';
+  document.querySelector('[data-phase-view="shape"]').innerHTML = `${phaseHeader('PHASE 1','The event, clearly defined','Keep the brief, constraints, and priorities visible before making commitments.',true)}${nextAction('Compare services against this brief','Continue to Source','data-phase-jump="source"')}
+    <article class="plan-banner"><div><h3>${esc(state.brief.title)}</h3><p>EventReady is accounting for venue requirements, service coverage, timing, ownership, and budget together.</p></div><div class="decision-count"><strong>${open}</strong><span>open decisions</span></div></article>
+    <section class="section-block"><header><h3>Working facts</h3><button class="quiet-button" data-edit-shape>Edit brief</button></header><div class="fact-grid"><div><span>Date & time · ${esc(state.brief.provenance?.serveAt||'given')}</span><strong>${esc(formatDate(state.brief.serveAt))}</strong></div><div><span>Venue · ${esc(state.brief.provenance?.venueName||'given')}</span><strong>${esc(state.brief.venueName)}</strong></div><div><span>Guests · ${esc(state.brief.provenance?.headcount||'given')}</span><strong>${state.brief.headcount}</strong></div><div><span>Budget · ${esc(state.brief.provenance?.budget||'given')}</span><strong>$${Number(state.brief.budget).toLocaleString()}</strong></div></div></section>
+    <section class="section-block"><header><h3>Requirements being carried forward</h3><p>Calculated from the current brief</p></header><div class="plan-phases"><article class="plan-phase-row done"><span>✓</span><div><h4>Venue foundation</h4><p>${esc(state.brief.venueName)} · ${state.brief.venueHasKitchen?'Kitchen available':'No working kitchen recorded'}</p></div><button data-phase-jump="source">Continue →</button></article><article class="plan-phase-row"><span>2</span><div><h4>Guest needs</h4><p>${esc(needs)}</p></div><button data-edit-shape>Review</button></article><article class="plan-phase-row"><span>3</span><div><h4>Operational ownership</h4><p>${state.readiness.responsibilities.filter(row=>row.status==='unresolved').length} required jobs still need an explicit owner</p></div><button data-phase-jump="coordinate">Open →</button></article></div></section>`;
+}
+
+function renderSourcePhase(state) {
+  const committed = currentBooking(state);
+  const priority=state.rawBrief?.priority || 'coverage';
+  const orderedOptions=[...state.options].sort((a,b)=>priority==='budget'?a.subtotal-b.subtotal:priority==='coordination'?(a.blockers-b.blockers||a.vendorCount-b.vendorCount):priority==='experience'?(Number(b.recommended)-Number(a.recommended)||b.subtotal-a.subtotal):(a.blockers-b.blockers||Number(b.recommended)-Number(a.recommended)));
+  const options = orderedOptions.map((option,index) => {
+    const providerNames=[...new Set((option.items||[]).map(item=>item.vendorName).filter(Boolean))];
+    const coverage=option.uncovered?.length ? `${option.uncovered.length} guest need${option.uncovered.length===1?'':'s'} uncovered` : 'All recorded guest needs covered';
+    const cheapest=option.subtotal===Math.min(...state.options.map(row=>row.subtotal));
+    const fit=option.recommended?'Best operational fit':cheapest?'Lowest estimated cost':option.blockers===Math.min(...state.options.map(row=>row.blockers))?'Lowest coordination burden':'Alternative approach';
+    return `<article class="provider-card ${option.recommended?'recommended':''}"><span class="provider-rank">${String(index+1).padStart(2,'0')}</span><div><span class="fit-label">${fit}</span><h3>${esc(providerNames.join(' + ') || option.label || `Service plan ${index+1}`)}</h3><p>${esc(option.summary || 'Provider plan')}</p><div class="provider-facts"><span>${esc(coverage)}</span><span>${option.itemCount || option.items?.length || 0} package lines</span><span>${option.blockers || 0} blockers remain</span><span>${esc(state.serviceLevel.replaceAll('_',' '))}</span></div></div><aside><small>ESTIMATED PACKAGE</small><strong>$${Number(option.subtotal).toLocaleString()}</strong><button class="primary-button" data-open-package="${esc(option.id)}">${committed?.optionId===option.id?'View working package':'Explore package'}</button></aside></article>`;
+  }).join('');
+  document.querySelector('[data-phase-view="source"]').innerHTML = `${phaseHeader('PHASE 2','Find the services that complete the plan',`Ranked for ${label(priority)}. Compare coverage, cost, and the operational work each option leaves behind.`,!!committed)}${nextAction(committed?'Coordinate the work this plan leaves behind':'Review the strongest operational fit',committed?'Continue to Coordinate':'Review best fit',committed?'data-phase-jump="coordinate"':`data-open-package="${esc(orderedOptions[0]?.id || '')}"`)}
+    <article class="service-brief"><div><span class="kicker">CURRENT REQUIREMENT</span><h3>Reception service for ${state.brief.headcount} guests</h3><p>Must cover recorded dietary needs and fit ${esc(state.brief.venueName)}’s operating requirements.</p></div><span class="sample-label">FICTIONAL SAMPLE PROVIDERS</span></article>
+    <section class="provider-legend" aria-label="How to read provider results"><div><strong>Requirements</strong><span>Generated from your brief and venue constraints.</span></div><div><strong>Capabilities</strong><span>Structured sample records read through the same planning contracts used by WebMCP.</span></div><div><strong>Availability</strong><span>Not live. Confirm dates and pricing directly before relying on a provider.</span></div></section>
+    <div class="provider-list">${options}</div>
+    ${committed?`<article class="commitment commitment-lifecycle"><header><div><span class="kicker">WORKING COMMITMENT</span><h3>${esc(committed.label)}</h3></div><strong>$${Number(committed.total||committed.subtotal).toLocaleString()}</strong></header><div class="lifecycle">${[['selected','Selected'],['requested','Quote requested'],['received','Quote received'],['confirmed','Provider confirmed']].map(([key,text])=>`<button class="${eventOps.commitmentStatus===key?'active':''}" data-commitment-status="${key}"><span>${eventOps.commitmentStatus===key?'●':'○'}</span>${text}</button>`).join('')}</div><div class="commitment-evidence"><span>${eventOps.commitmentStatus==='selected'?'WORKING PLAN':eventOps.commitmentStatus==='requested'?'SAMPLE REQUEST':eventOps.commitmentStatus==='received'?'SAMPLE QUOTE':'CONFIRMATION ER-1048'}</span><strong>${eventOps.commitmentStatus==='selected'?'Package saved for review':eventOps.commitmentStatus==='requested'?'Availability request prepared':eventOps.commitmentStatus==='received'?'Quote received · 30% deposit proposed':'Provider terms recorded'}</strong><small>${eventOps.commitmentStatus==='received'?'Sample quote expires in 14 days.':eventOps.commitmentStatus==='confirmed'?'Availability and terms marked verified for this demo.':'Advance the status only when the real-world handoff occurs.'}</small></div><p class="prototype-note">Statuses are simulated locally. No provider was contacted and no payment was taken.</p><div class="handoff-panel"><strong>${eventOps.commitmentStatus==='confirmed'?'Confirmation recorded for this demo':'Provider confirmation required'}</strong><span>Availability, final pricing, contract terms, and deposit must still be verified directly.</span><button class="quiet-button" data-copy-provider-request>Copy confirmation request</button></div><div class="commitment-actions"><button class="quiet-button" data-open-package="${esc(committed.optionId)}">Review package</button><button class="quiet-button danger" data-remove-booking>Remove commitment</button></div></article>`:''}`;
+}
+
+function basketState(option) {
+  const saved=eventOps.packageRefinement.baskets?.[option.id];
+  if (saved?.lines) return saved.lines;
+  const guestCount=eventOps.packageRefinement.guestCount || session.snapshot().brief.headcount;
+  const ratio=Math.max(.1,guestCount/Math.max(1,session.snapshot().brief.headcount));
+  const enriched=(option?.items||[]).map(item=>({...catalog.find(row=>row.catalogKey===`${item.vendor||''}:${item.id}`),...item}));
+  return recommendedBasket(enriched,ratio);
+}
+
+function saveBasket(option,lines,customized=true) {
+  eventOps.packageRefinement.baskets ||= {};
+  eventOps.packageRefinement.baskets[option.id]={lines,customized,updatedAt:new Date().toISOString()};
+}
+
+function packageTotals(option) {
+  const lines=basketState(option);
+  const subtotal=lines.length ? basketSubtotal(lines) : 0;
+  const delivery=['delivery','dropoff_setup','staffed'].includes(eventOps.packageRefinement.serviceLevel) ? Math.round(subtotal*.06) : 0;
+  const cleanup=eventOps.packageRefinement.addCleanup ? 450 : 0;
+  const tax=Math.round((subtotal+delivery+cleanup)*(eventOps.ledger.taxRate/100));
+  const gratuity=eventOps.packageRefinement.serviceLevel==='staffed' ? Math.round(subtotal*(eventOps.ledger.gratuityRate/100)) : 0;
+  return {subtotal,delivery,cleanup,tax,gratuity,total:subtotal+delivery+cleanup+tax+gratuity};
+}
+
+function coverageMarkup(metrics) {
+  const chips=[];
+  chips.push(metrics.servingShort
+    ? `<span class="coverage-chip warning">! ${metrics.servingShort} guest servings short</span>`
+    : `<span class="coverage-chip good">✓ ${metrics.servings} guest servings</span>`);
+  for (const [kind,result] of Object.entries(metrics.dietary)) {
+    if (!result.needed) continue;
+    chips.push(result.short
+      ? `<span class="coverage-chip warning">! ${result.short} ${esc(label(kind))} short</span>`
+      : `<span class="coverage-chip good">✓ ${result.needed} ${esc(label(kind))}</span>`);
+  }
+  return chips.join('');
+}
+
+function itemUnit(item) {
+  if (item.category==='labor') return 'hour';
+  if (item.category==='equipment') return 'set';
+  return 'package';
+}
+
+function catalogMarkup(lines) {
+  if (!appState.catalogMode) return '';
+  const replacing=lines.find(row=>row.catalogKey===appState.replaceBasketKey);
+  const candidates=catalog.filter(item=>{
+    if (lines.some(row=>row.catalogKey===item.catalogKey) && item.catalogKey!==replacing?.catalogKey) return false;
+    return !replacing || item.category===replacing.category;
+  });
+  const groups=[...new Set(candidates.map(item=>item.vendorKind))];
+  return `<aside class="catalog-drawer" aria-label="Event service catalog"><header><div><span class="kicker">${replacing?'COMPATIBLE SWAPS':'EVENT CATALOG'}</span><h3>${replacing?`Replace ${esc(replacing.name)}`:'Add to this basket'}</h3><p>${replacing?'Alternatives preserve the current quantity.':'Food, equipment, and staffing share the same catalog contract.'}</p></div><button class="quiet-button" data-close-catalog type="button">Done</button></header>${groups.map(kind=>`<section><h4>${esc(label(kind))}</h4><div class="catalog-list">${candidates.filter(item=>item.vendorKind===kind).map(item=>`<article><div><strong>${esc(item.name)}</strong><small>${esc(item.vendorName)} · ${esc(label(item.category))}${item.claimed_serves?` · capacity ${item.claimed_serves}`:''}</small><span>${(item.dietary||[]).map(label).join(' · ')||esc(label(item.provides_resource||itemUnit(item)))}</span></div><div><strong>$${Number(item.price).toLocaleString()}</strong><button class="quiet-button" data-catalog-item="${esc(item.catalogKey)}" type="button">${replacing?'Swap':'Add'}</button></div></article>`).join('')}</div></section>`).join('')||'<p class="empty-basket">No compatible catalog alternatives are available.</p>'}</aside>`;
+}
+
+function openPackage(optionId) {
+  const state=session.snapshot(); const option=state.options.find(item=>item.id===optionId);
+  if (!option) return;
+  appState.packageOptionId=optionId;
+  const items=basketState(option);
+  const totals=packageTotals(option);
+  const selectedVendors=[...new Set(items.map(item=>item.vendor).filter(Boolean))].map(slug=>admittedVendors.find(vendor=>vendor.slug===slug)).filter(Boolean);
+  const requirements=[...new Set(selectedVendors.flatMap(vendor=>{const level=vendor.service_levels.includes(eventOps.packageRefinement.serviceLevel)?eventOps.packageRefinement.serviceLevel:vendor.service_levels[0];return vendor.requirements?.[level]?.requires||[];}))];
+  const providerOwned=new Set([
+    ...items.filter(item=>['caterer','bakery'].includes(item.vendorKind)).map(()=>'food'),
+    ...items.map(item=>item.provides_resource).filter(Boolean),
+    ...(['delivery','dropoff_setup','staffed'].includes(eventOps.packageRefinement.serviceLevel)?['transport']:[]),
+    ...(eventOps.packageRefinement.serviceLevel==='staffed'?['setup','service','cleanup']:[])
+  ]);
+  const teamRequirements=requirements.filter(resource=>!providerOwned.has(resource));
+  const requestedGuests=eventOps.packageRefinement.guestCount || state.brief.headcount;
+  const metrics=basketMetrics(items,state.brief.dietary,requestedGuests);
+  const customized=!!eventOps.packageRefinement.baskets?.[option.id]?.customized;
+  $('packageTitle').textContent='Build your event basket';
+  $('packageBody').innerHTML=`<div class="package-summary"><div><span class="kicker">${customized?'CUSTOM EVENT BASKET':'RECOMMENDED STARTING BASKET'}</span><h3>${requestedGuests} guests · ${esc(label(state.brief.eventType))}</h3><div class="coverage-strip">${coverageMarkup(metrics)}</div></div><div class="package-total"><span>Working total</span><strong>$${totals.total.toLocaleString()}</strong><small>${metrics.providers} provider${metrics.providers===1?'':'s'} · including estimated fees</small></div></div>
+    <section class="package-section"><header class="basket-section-head"><div><span class="section-number">01</span><div><h3>Build the basket</h3><p>Adjust quantities, swap alternatives, or combine services from the catalog.</p></div></div><div class="basket-head-actions"><button class="quiet-button" data-open-catalog="add" type="button">+ Add item</button>${customized?'<button class="quiet-button" data-reset-basket type="button">Restore recommendation</button>':''}</div></header><div class="line-items editable-lines">${items.length?items.map(item=>`<article data-basket-line="${esc(item.catalogKey)}"><div class="line-item-copy"><span class="item-kind">${esc(label(item.vendorKind||item.category))}</span><strong>${esc(item.name)}</strong><small>${esc(item.vendorName||'Sample provider')} · ${item.claimed_serves?`${Number(item.claimed_serves)*item.quantity} capacity`:`${esc(label(item.provides_resource||itemUnit(item)))}`}</small><span>${(item.dietary||[]).map(label).join(', ')||esc(label(item.category||'service'))}</span></div><div class="line-item-controls"><strong>$${Number(item.price*item.quantity).toLocaleString()}</strong><div class="quantity-control" aria-label="Quantity for ${esc(item.name)}"><button data-quantity-delta="-1" data-basket-key="${esc(item.catalogKey)}" type="button" aria-label="Decrease quantity">−</button><span>${item.quantity}</span><button data-quantity-delta="1" data-basket-key="${esc(item.catalogKey)}" type="button" aria-label="Increase quantity">+</button></div><div class="line-actions"><button data-swap-item="${esc(item.catalogKey)}" type="button">Swap</button><button data-remove-item="${esc(item.catalogKey)}" type="button">Remove</button></div></div></article>`).join(''):'<div class="empty-basket"><strong>Your basket is empty</strong><span>Add a catalog item to rebuild coverage.</span></div>'}</div>${catalogMarkup(items)}</section>
+    <section class="package-section"><header><div><span class="section-number">02</span><div><h3>Refine the service</h3><p>Changes update cost and the work left to your team.</p></div></div></header><div class="refine-grid"><label>Service level<select id="packageService"><option value="pickup">Pickup</option><option value="delivery">Delivery</option><option value="dropoff_setup">Delivery + setup</option><option value="staffed">Staffed service</option></select></label><label>Guest count<input id="packageGuests" type="number" min="1" value="${requestedGuests}"></label><label class="check-row"><input id="packageCleanup" type="checkbox" ${eventOps.packageRefinement.addCleanup?'checked':''}> Add cleanup crew (+$450)</label><label>Package notes<textarea id="packageNotes" rows="2" placeholder="Menu swaps, service notes, questions…">${esc(eventOps.packageRefinement.notes||'')}</textarea></label></div></section>
+    <section class="package-section terms-grid"><div><span class="section-number">03</span><h3>Coverage & handoffs</h3><p><strong>Providers own:</strong> ${providerOwned.size?[...providerOwned].map(label).join(', '):'No capabilities selected'}.</p><p><strong>Your team still owns:</strong> ${teamRequirements.length?teamRequirements.map(label).join(', '):'No package-specific handoffs recorded'}.</p></div><div class="cost-breakdown"><h3>Estimate</h3><p><span>Package</span><strong>$${totals.subtotal.toLocaleString()}</strong></p><p><span>Delivery/service</span><strong>$${totals.delivery.toLocaleString()}</strong></p><p><span>Cleanup add-on</span><strong>$${totals.cleanup.toLocaleString()}</strong></p><p><span>Estimated tax</span><strong>$${totals.tax.toLocaleString()}</strong></p><p><span>Estimated gratuity</span><strong>$${totals.gratuity.toLocaleString()}</strong></p><p class="total"><span>Working total</span><strong>$${totals.total.toLocaleString()}</strong></p><small>Fictional sample pricing. Availability, terms, and final price require provider confirmation.</small></div></section>`;
+  $('packageService').value=eventOps.packageRefinement.serviceLevel || state.serviceLevel;
+  openOverlay('packageOverlay');
+}
+
+function capturePackageControls() {
+  if (!$('packageService')) return;
+  eventOps.packageRefinement={...eventOps.packageRefinement,serviceLevel:$('packageService').value,guestCount:Number($('packageGuests').value)||session.brief.headcount,addCleanup:$('packageCleanup').checked,notes:$('packageNotes').value.trim(),baskets:eventOps.packageRefinement.baskets||{}};
+}
+
+function updatePackageRefinement() {
+  capturePackageControls();
+  const id=appState.packageOptionId; openPackage(id);
+}
+
+function activePackageOption() {
+  return session.snapshot().options.find(option=>option.id===appState.packageOptionId);
+}
+
+function mutateActiveBasket(change) {
+  const option=activePackageOption();
+  if (!option) return;
+  capturePackageControls();
+  saveBasket(option,change(basketState(option)),true);
+  openPackage(option.id);
+}
+
+function renderCoordinatePhase(state) {
+  const current = currentBooking(state);
+  const groups = [
+    ['Provider commitments',state.readiness.responsibilities.filter(row => row.owner === 'provider')],
+    ['Your event team',state.readiness.responsibilities.filter(row => row.owner === 'organizer')],
+    ['Still unassigned',state.readiness.responsibilities.filter(row => row.status === 'unresolved')]
+  ];
+  const personOptions=`<option value="">Choose owner…</option>${eventOps.team.map(person=>`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`).join('')}`;
+  const groupHtml = groups.map(([name,rows]) => `<section class="responsibility-group"><header><h3>${esc(name)}</h3><span>${rows.length} responsibilities</span></header>${rows.length?rows.slice(0,16).map(row=>{
+    const assignedId=eventOps.assignmentPeople[row.id]; const person=eventOps.team.find(item=>item.id===assignedId);
+    const accepted=!!eventOps.assignmentAcceptance[row.id];
+    const detail = row.owner === 'provider' ? `${row.when || 'Timing to confirm'} · ${row.evidence}` : (row.when || 'Timing to confirm');
+    return `<article class="responsibility-row ${row.owner==='provider'?'provider-owned':'assignable'}"><div><strong>${esc(label(row.resource))}</strong><small>${esc(detail)}</small></div>${row.owner==='provider'?`<span class="owner-pill">${esc(row.ownerLabel)}</span><span>✓</span>`:`<div class="assignment-control"><select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${esc(label(row.resource))}">${person?`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`:''}${personOptions}</select>${person?`<button class="acceptance-toggle ${accepted?'accepted':''}" aria-pressed="${accepted}" data-accept-assignment="${esc(row.id)}" type="button">${accepted?'✓ Accepted':'Awaiting acceptance'}</button>`:''}</div>`}</article>`;
+  }).join(''):'<article class="responsibility-row empty"><div><strong>Nothing here</strong><small>No responsibilities in this group.</small></div></article>'}</section>`).join('');
+  const budget = Number(state.brief.budget) || 0;
+  const committed = current?.total || current?.subtotal || 0;
+  const percent = budget ? Math.min(100,Math.round(committed/budget*100)) : 0;
+  const remaining = state.readiness.responsibilities.filter(row=>row.status==='unresolved').length;
+  const deposit=Math.round(committed*(eventOps.ledger.depositRate/100));
+  document.querySelector('[data-phase-view="coordinate"]').innerHTML = `${phaseHeader('PHASE 3','Put an owner on every moving part','Build a small event team, distribute the work, and keep the financial handoffs visible.',!!current && remaining===0)}${nextAction(remaining?`Put an owner on ${remaining} remaining responsibilities`:'Check final readiness',remaining?'Assign the remaining work':'Continue to Prepare',remaining?'data-review-assign-all':'data-phase-jump="prepare"')}
+    <section class="team-roster" id="teamRoster"><header><div><span class="kicker">YOUR EVENT TEAM</span><h3>${eventOps.team.length} people coordinating this event</h3></div><button class="quiet-button" data-toggle-add-person>+ Add person</button></header><div class="people-list">${eventOps.team.map(person=>{const ids=Object.entries(eventOps.assignmentPeople).filter(([,id])=>id===person.id).map(([id])=>id);const accepted=ids.filter(id=>eventOps.assignmentAcceptance[id]).length;return `<article><span>${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)} · ${esc(person.contact||'No contact added')}</small></div><b>${ids.length?`${accepted}/${ids.length} accepted`:'No tasks'}</b></article>`}).join('')}</div><form id="addPersonForm" class="add-person-form" hidden><label>Name<input id="newPersonName" required></label><label>Role<input id="newPersonRole" placeholder="Host, coordinator, helper…" required></label><label>Contact<input id="newPersonContact" placeholder="Email or phone"></label><button class="primary-button" type="submit">Add to team</button></form></section>
+    <div class="coordinate-grid"><div class="responsibility-groups">${groupHtml}<section class="custom-task"><header><div><h3>Something else to coordinate?</h3><p>Add décor, music, photography, permits, transport, or any event-specific handoff.</p></div></header><form id="customTaskForm"><input id="customTaskName" placeholder="Add a responsibility" required><input id="customTaskWhen" placeholder="Due time or moment"><select id="customTaskOwner">${personOptions}</select><button class="quiet-button" type="submit">Add task</button></form>${eventOps.customTasks.map(task=>`<article class="responsibility-row"><div><strong>${esc(task.name)}</strong><small>${esc(task.when||'Timing to confirm')} · custom</small></div><span class="owner-pill">${esc(eventOps.team.find(p=>p.id===task.ownerId)?.name||'Unassigned')}</span></article>`).join('')}</section></div><aside><div class="budget-panel"><span>Unallocated budget</span><strong>$${Math.max(0,budget-committed-eventOps.ledger.venue).toLocaleString()}</strong><small>of $${budget.toLocaleString()} working budget</small><div class="budget-bar"><i style="width:${percent}%"></i></div><div class="budget-lines"><div><span>Service package</span><strong>$${committed.toLocaleString()}</strong></div><label><span>Venue estimate</span><input id="venueCost" type="number" min="0" value="${eventOps.ledger.venue||''}" placeholder="Not entered"></label><div><span>Deposit (${eventOps.ledger.depositRate}%)</span><strong>$${deposit.toLocaleString()}</strong></div><label class="payment-check"><span>Deposit status</span><span><input id="depositPaid" type="checkbox" ${eventOps.ledger.depositPaid?'checked':''}> Mark paid for demo</span></label><div><span>Contingency target</span><strong>$${Math.round(budget*.1).toLocaleString()}</strong></div></div><div class="handoff-panel"><strong>Payment handoff not connected</strong><span>Demo statuses never represent a processed payment.</span><button class="quiet-button" data-copy-payment-checklist>Copy payment checklist</button></div></div></aside></div>`;
+}
+
+function renderPreparePhase(state) {
+  const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved');
+  const operating=operationalState(state);
+  const open = [...state.readiness.blockers.map(item=>({type:'Blocker',title:item.message||item.kind||'Coverage issue',detail:item.detail||'Requires a plan change'})),...unresolved.map(row=>({type:'Unowned',title:label(row.resource),detail:`${row.when||'Timing to confirm'} · ${row.evidence}`}))];
+  document.querySelector('[data-phase-view="prepare"]').innerHTML = `${phaseHeader('EVENT PREFLIGHT',operating.status==='ready'?'Cleared for event day':operating.status==='confirmations'?'The plan is complete. Confirm the real-world handoffs.':'Close the gaps before they become surprises','A plan is only ready when its coverage, people, provider, timing, and critical confirmations agree.',operating.status==='ready','Cleared')}${nextAction(open.length?'Resolve the highest-impact blocker':operating.status==='confirmations'?'Complete the critical confirmations':'Open the operational run plan',open.length?(state.serviceLevel==='pickup'?'Review delivery':'Open Coordinate'):operating.status==='confirmations'?'Review confirmations':'Open Run',open.length?(state.serviceLevel==='pickup'?'data-review-delivery':'data-phase-jump="coordinate"'):operating.status==='confirmations'?'data-scroll-confirmations':'data-phase-jump="run"')}
+    <div class="readiness-matrix">${operating.areas.map(area=>`<article class="${area.status}"><span>${area.status==='ready'?'✓':area.status==='blocked'?'!':'○'}</span><div><strong>${esc(area.label)}</strong><small>${esc(area.detail)}</small></div><b>${esc(area.status==='ready'?'Ready':area.status==='blocked'?'Blocked':'Confirm')}</b></article>`).join('')}</div>
+    <section class="confirmation-panel" id="confirmationPanel"><header><div><span class="kicker">CRITICAL CONFIRMATIONS</span><h3>What must be true outside EventReady</h3><p>These demo checks record verification; they do not contact a provider or process payment.</p></div></header><div class="confirmation-list">${[['provider','Provider confirms availability'],['terms','Final price and contract terms reviewed'],['deposit','Required deposit recorded'],['finalCount','Final guest count confirmed'],['venueAccess','Venue access and on-site contact confirmed']].map(([key,text])=>`<label><input type="checkbox" data-confirmation="${key}" ${eventOps.confirmation[key]?'checked':''}><span><strong>${text}</strong><small>${eventOps.confirmation[key]?'Recorded for this demo plan':'Still needs confirmation'}</small></span></label>`).join('')}</div></section>
+    <div class="readiness-grid"><article class="readiness-card"><span>Coverage</span><strong>${state.readiness.counts?.covered ?? state.readiness.responsibilities.filter(row=>row.status!=='unresolved').length}</strong></article><article class="readiness-card"><span>Blockers</span><strong>${state.readiness.blockers.length}</strong></article><article class="readiness-card"><span>Unowned work</span><strong>${unresolved.length}</strong></article></div>
+    <section class="section-block"><header><h3>${open.length?'What still needs attention':operating.status==='ready'?'Every critical need has a clear path':'The operating plan is complete; external confirmations remain'}</h3>${state.serviceLevel==='pickup'&&open.length?'<button class="primary-button" data-review-delivery>Review delivery option</button>':''}</header><div class="blocker-list">${open.length?open.slice(0,12).map(item=>`<article class="blocker-row"><span>!</span><div><h4>${esc(item.title)}</h4><p>${esc(item.type)} · ${esc(item.detail)}</p></div><button class="quiet-button" data-phase-jump="coordinate">Resolve</button></article>`).join(''):operating.status==='ready'?'<article class="commitment"><h3>Ready to run</h3><p>Coverage, timing, ownership, and critical confirmations are satisfied. Open the run plan to share the operating sequence.</p><button class="primary-button" data-phase-jump="run">Open run plan →</button></article>':'<article class="commitment pending"><h3>Confirm before relying on this plan</h3><p>The operational structure is complete, but provider, deposit, final-count, or venue checks are still outstanding.</p><button class="primary-button" data-scroll-confirmations>Review confirmations ↑</button></article>'}</div></section>`;
+}
+
+function renderRunPhase(state) {
+  const run = state.runOfShow;
+  const ready = operationalState(state).status === 'ready';
+  const combinedRows=[...run.rows.map((row,index)=>({...row,key:String(index)})),...eventOps.customTasks.map((task,index)=>({at:task.when||'Time TBD',action:task.name,evidence:'Custom responsibility',owner:eventOps.team.find(person=>person.id===task.ownerId)?.name||'Unassigned',key:`custom-${index}`}))];
+  const activeIndex=Math.max(0,combinedRows.findIndex(row=>!eventOps.completedRows[row.key]));
+  const activeRow=combinedRows[activeIndex]||{at:'—',action:'All scheduled work is complete',evidence:'No open run tasks',owner:'Event team',key:'none'};
+  const nextRow=combinedRows[activeIndex+1];
+  document.querySelector('[data-phase-view="run"]').innerHTML = `${phaseHeader('EVENT DAY',ready?'The plan everyone can follow':'Your working run-of-show',ready?'Every moment has an owner and evidence from the current plan.':'This remains a draft until critical gaps and ownership are resolved.',ready,ready?'Ready':'Draft')}
+    <section class="run-mobile-mode"><span class="kicker">NOW IN THE PLAN</span><div class="run-now"><time>${esc(activeRow.at)}</time><div><h3>${esc(activeRow.action)}</h3><p>${esc(activeRow.owner)} · ${esc(activeRow.evidence)}</p></div></div>${activeRow.key!=='none'?`<button class="primary-button" data-complete-row="${esc(activeRow.key)}">Mark complete</button>`:''}${nextRow?`<div class="run-next"><span>UP NEXT · ${esc(nextRow.at)}</span><strong>${esc(nextRow.action)}</strong></div>`:''}<div class="run-mobile-actions"><button class="quiet-button" data-toggle-run-sheet>${appState.runSheetExpanded?'Hide full run sheet':'View full run sheet'}</button><button class="quiet-button" data-report-issue>Report an issue</button></div></section>
+    <section class="run-cover"><div><span>${esc(label(state.brief.eventType))}</span><h3>${esc(state.brief.title)}</h3><p>${esc(formatDate(state.brief.serveAt))} · ${esc(state.brief.venueName)}</p></div><aside><span>EVENTREADY</span><strong>${ready?'Ready to share':'Working draft'}</strong></aside></section>
+    <div class="run-banner ${ready?'ready':''}"><strong>${ready?'READY TO SHARE':'DRAFT PLAN'}</strong><span>${ready?'Use this sequence with providers and the event team.':'Resolve remaining decisions before relying on this plan.'}</span><div><button class="quiet-button" data-copy-run>Copy</button> <button class="quiet-button" data-print-run>Print</button></div></div>
+    <div class="run-contacts"><span class="kicker">EVENT TEAM</span>${eventOps.team.map(person=>`<article><span>${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)}</small></div><a href="${person.contact?.includes('@')?'mailto:':'tel:'}${esc(person.contact||'')}">${esc(person.contact||'No contact')}</a></article>`).join('')}</div>
+    <div class="run-table ${appState.runSheetExpanded?'expanded':''}">${run.rows.map((row,index)=>`<article class="run-row ${eventOps.completedRows[index]?'complete':''}"><button class="run-check" data-complete-row="${index}" aria-label="Mark ${esc(row.action)} complete">${eventOps.completedRows[index]?'✓':'○'}</button><time>${esc(row.at)}</time><div><h4>${esc(row.action)}</h4><p>${esc(row.evidence)} · ${esc(state.brief.venueName)}</p></div><span>${esc(row.owner)}</span></article>`).join('')}${eventOps.customTasks.map((task,index)=>`<article class="run-row ${eventOps.completedRows[`custom-${index}`]?'complete':''}"><button class="run-check" data-complete-row="custom-${index}">${eventOps.completedRows[`custom-${index}`]?'✓':'○'}</button><time>${esc(task.when||'Time TBD')}</time><div><h4>${esc(task.name)}</h4><p>Custom responsibility · ${esc(state.brief.venueName)}</p></div><span>${esc(eventOps.team.find(person=>person.id===task.ownerId)?.name||'Unassigned')}</span></article>`).join('')}</div>`;
+}
+
+function operationalState(state) {
+  const engineReady=state.readiness.state==='ready';
+  const customUnowned=eventOps.customTasks.filter(task=>!task.ownerId).length;
+  const assignedIds=Object.keys(eventOps.assignmentPeople);
+  const pendingAcceptance=assignedIds.filter(id=>!eventOps.assignmentAcceptance[id]).length;
+  const committed=!!currentBooking(state);
+  const confirmed=Object.values(eventOps.confirmation).every(Boolean);
+  const areas=[
+    {label:'Requirements coverage',status:state.readiness.blockers.length?'blocked':'ready',detail:state.readiness.blockers.length?`${state.readiness.blockers.length} coverage or timing blockers`:'Recorded needs have a covered path'},
+    {label:'Provider commitment',status:!committed?'blocked':eventOps.confirmation.provider&&eventOps.confirmation.terms?'ready':'confirm',detail:!committed?'No working package selected':eventOps.confirmation.provider?'Availability and terms recorded':'Availability or terms not confirmed'},
+    {label:'People & ownership',status:state.readiness.counts.unowned||customUnowned?'blocked':pendingAcceptance?'confirm':'ready',detail:state.readiness.counts.unowned||customUnowned?`${state.readiness.counts.unowned+customUnowned} responsibilities unassigned`:pendingAcceptance?`${pendingAcceptance} assignments awaiting acceptance`:'Every required responsibility is owned and accepted'},
+    {label:'Budget & deposit',status:!committed?'blocked':eventOps.confirmation.deposit?'ready':'confirm',detail:eventOps.confirmation.deposit?'Deposit status recorded':'Deposit still needs verification'},
+    {label:'Final event checks',status:eventOps.confirmation.finalCount&&eventOps.confirmation.venueAccess?'ready':'confirm',detail:eventOps.confirmation.finalCount&&eventOps.confirmation.venueAccess?'Guest count and venue access confirmed':'Final count or venue access still open'}
+  ];
+  return {status:!engineReady||customUnowned||!committed?'incomplete':confirmed&&!pendingAcceptance?'ready':'confirmations',areas};
+}
+
+function activatePhase(phase, scroll=true) {
+  appState.activePhase = PHASES.includes(phase) ? phase : 'shape';
+  document.querySelectorAll('[data-phase]').forEach(button => {
+    const active=button.dataset.phase===appState.activePhase;
+    button.classList.toggle('active',active);
+    if (active) button.setAttribute('aria-current','step');
+    else button.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('[data-phase-view]').forEach(view => view.classList.toggle('active',view.dataset.phaseView===appState.activePhase));
+  if (scroll) window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function proposalFor(kind,payload={}) {
+  const state = session.snapshot();
+  const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved').length;
+  if (kind === 'booking') {
+    const option = state.options.find(item => item.id === payload.optionId);
+    const totals=packageTotals(option);
+    const lines=basketState(option); const metrics=basketMetrics(lines,state.brief.dietary,eventOps.packageRefinement.guestCount||state.brief.headcount);
+    const dietaryGaps=Object.entries(metrics.dietary).filter(([,result])=>result.short>0);
+    const gapCount=(metrics.servingShort?1:0)+dietaryGaps.length;
+    const gapText=[metrics.servingShort?`${metrics.servingShort} guest servings`:null,...dietaryGaps.map(([kind,result])=>`${result.short} ${label(kind)} servings`)].filter(Boolean).join(', ');
+    return { kind,payload,title:'Add this basket to the working plan?',summary:`Record ${lines.length} customized catalog lines from ${metrics.providers} provider${metrics.providers===1?'':'s'} with ${eventOps.packageRefinement.serviceLevel.replaceAll('_',' ')} service. This starts a commitment record; it does not book or pay a provider.`,before:{cost:currentBooking(state)?.total||0,open:unresolved+state.readiness.blockers.length},after:{cost:totals.total,open:unresolved+state.readiness.blockers.length+gapCount},risk:gapCount?`Coverage is still short by ${gapText}. Availability, final pricing, and contract terms also remain unconfirmed.`:'Availability, final pricing, contract terms, menu changes, and deposit remain unconfirmed.' };
+  }
+  if (kind === 'delivery') {
+    const temp = new EventSession({vendors,demo:{...session.snapshot().rawBrief},venue}); temp.assess(); temp.changeServiceLevel('delivery');
+    const after = temp.snapshot();
+    return { kind,payload,title:'Switch service from pickup to delivery?',summary:'Recalculate the plan so providers own delivery while your team retains only the obligations not included in that service level.',before:{cost:state.options.find(o=>o.id===state.selectedOptionId)?.subtotal||0,open:unresolved+state.readiness.blockers.length},after:{cost:after.options[0]?.subtotal||0,open:after.readiness.responsibilities.filter(row=>row.status==='unresolved').length+after.readiness.blockers.length},risk:'Delivery can reduce collection work but may still leave setup, equipment, or cleanup unowned.' };
+  }
+  return { kind:'assignAll',payload,title:'Assign the remaining host work to Roy?',summary:'Give every currently unowned organizer responsibility an explicit owner. Provider commitments are unchanged.',before:{cost:currentBooking(state)?.subtotal||0,open:unresolved+state.readiness.blockers.length},after:{cost:currentBooking(state)?.subtotal||0,open:state.readiness.blockers.length},risk:'Assignment records ownership; it does not prove the person has accepted or can safely perform the work.' };
+}
+
+function openProposal(proposal) {
+  appState.proposal = proposal;
+  $('proposalTitle').textContent = proposal.title;
+  $('proposalSummary').textContent = proposal.summary;
+  $('proposalDelta').innerHTML = `<div><span>Before</span><strong>${proposal.before.open} open</strong><small>$${Number(proposal.before.cost).toLocaleString()}</small></div><span>→</span><div><span>After</span><strong>${proposal.after.open} open</strong><small>$${Number(proposal.after.cost).toLocaleString()}</small></div>`;
+  $('proposalRisks').innerHTML = `<strong>Keep in mind</strong><p>${esc(proposal.risk)}</p>`;
+  openOverlay('proposalOverlay');
+}
+
+function closeProposal() { closeOverlay('proposalOverlay'); appState.proposal = null; }
+
+function applyProposal() {
+  const proposal = appState.proposal;
+  if (!proposal) return;
+  if (proposal.kind === 'booking') {
+    const state = session.snapshot(); const option = state.options.find(item => item.id === proposal.payload.optionId);
+    if (eventOps.packageRefinement.serviceLevel !== session.serviceLevel) session.changeServiceLevel(eventOps.packageRefinement.serviceLevel);
+    session.selectPlan(option.id);
+    const basket=basketState(option);
+    session.customizeBasket(basket);
+    const totals=packageTotals(option);
+    const providers=[...new Set(basket.map(item=>item.vendorName).filter(Boolean))];
+    booking = { optionId:option.id, subtotal:totals.subtotal, total:totals.total, label:providers.join(' + ') || option.label || 'Selected event basket', eventId:currentEventId, eventTitle:state.brief.title, status:'selected', refinement:{...eventOps.packageRefinement,basket:JSON.parse(JSON.stringify(basket))}, createdAt:new Date().toISOString() };
+    eventOps.commitmentStatus='selected';
+    eventOps.commitmentUpdatedAt=new Date().toISOString();
+    recordImpact(`Package added · $${totals.total.toLocaleString()} now tracked in the working budget.`);
+    appState.activePhase = 'coordinate';
+  } else if (proposal.kind === 'delivery') {
+    session.changeServiceLevel('delivery');
+    recordImpact('Delivery moved collection work from your team to the provider plan.');
+  } else {
+    const openIds=session.snapshot().readiness.responsibilities.filter(row=>row.status==='unresolved').map(row=>row.id);
+    session.assignAll('organizer','Roy · Organizer');
+    openIds.forEach(id=>{eventOps.assignmentPeople[id]='roy';eventOps.assignmentAcceptance[id]=false;});
+    recordImpact(`${openIds.length} responsibilities assigned to Roy · acceptance still required.`);
+  }
+  closeProposal(); persist(); renderWorkspace(session.snapshot());
+}
+
+function bindDynamicActions() {
+  [['customTaskName','Responsibility'],['customTaskWhen','Due time or moment'],['customTaskOwner','Task owner']].forEach(([id,name])=>$(id)?.setAttribute('aria-label',name));
+  document.querySelectorAll('[data-commitment-status]').forEach(button=>button.setAttribute('aria-pressed',String(button.classList.contains('active'))));
+  document.querySelectorAll('.run-check:not([aria-label])').forEach(button=>button.setAttribute('aria-label',`Mark ${button.closest('.run-row')?.querySelector('h4')?.textContent || 'run item'} complete`));
+  document.querySelectorAll('[data-phase-jump]').forEach(button => button.onclick = () => activatePhase(button.dataset.phaseJump));
+  document.querySelectorAll('[data-edit-shape]').forEach(button => button.onclick = () => { hydrateShapeFields(); renderShape(); showRoute('shape'); });
+  document.querySelectorAll('[data-review-option]').forEach(button => button.onclick = () => openProposal(proposalFor('booking',{optionId:button.dataset.reviewOption})));
+  document.querySelectorAll('[data-open-package]').forEach(button => button.onclick = () => openPackage(button.dataset.openPackage));
+  document.querySelectorAll('[data-assign-person]').forEach(select => select.onchange = () => { const person=eventOps.team.find(item=>item.id===select.value); if(!person)return; const id=select.dataset.assignPerson;eventOps.assignmentPeople[id]=person.id;eventOps.assignmentAcceptance[id]=false;session.assign(id,'organizer',`${person.name} · ${person.role}`);recordImpact(`${label(session.snapshot().readiness.responsibilities.find(row=>row.id===id)?.resource||'Responsibility')} assigned to ${person.name} · awaiting acceptance.`);persist(); renderWorkspace(session.snapshot()); });
+  document.querySelectorAll('[data-accept-assignment]').forEach(button=>button.onclick=()=>{const id=button.dataset.acceptAssignment;eventOps.assignmentAcceptance[id]=!eventOps.assignmentAcceptance[id];const person=eventOps.team.find(item=>item.id===eventOps.assignmentPeople[id]);recordImpact(`${person?.name||'Owner'} ${eventOps.assignmentAcceptance[id]?'accepted':'reopened'} this responsibility.`);persist();renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-review-assign-all]').forEach(button => button.onclick = () => openProposal(proposalFor('assignAll')));
+  document.querySelectorAll('[data-review-delivery]').forEach(button => button.onclick = () => openProposal(proposalFor('delivery')));
+  document.querySelectorAll('[data-remove-booking]').forEach(button => button.onclick = () => { booking=null; eventOps.commitmentStatus='draft'; eventOps.confirmation={...createEventOps().confirmation}; session.assess(); persist(); renderWorkspace(session.snapshot()); });
+  document.querySelectorAll('[data-confirmation]').forEach(input => input.onchange=()=>{eventOps.confirmation[input.dataset.confirmation]=input.checked;if(input.dataset.confirmation==='deposit')eventOps.ledger.depositPaid=input.checked;recordImpact(`${input.closest('label')?.querySelector('strong')?.textContent||'Confirmation'} ${input.checked?'recorded':'reopened'}.`);persist();renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-commitment-status]').forEach(button=>button.onclick=()=>{eventOps.commitmentStatus=button.dataset.commitmentStatus;eventOps.commitmentUpdatedAt=new Date().toISOString();if(eventOps.commitmentStatus==='confirmed'){eventOps.confirmation.provider=true;eventOps.confirmation.terms=true;}recordImpact(`${label(button.dataset.commitmentStatus)} added to the commitment history.`);persist();renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-complete-row]').forEach(button=>button.onclick=()=>{const key=button.dataset.completeRow;eventOps.completedRows[key]=!eventOps.completedRows[key];showToast(eventOps.completedRows[key]?'Run item marked complete.':'Run item reopened.');persist();renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-dismiss-impact]').forEach(button=>button.onclick=()=>{eventOps.lastImpact=null;persist();renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-toggle-run-sheet]').forEach(button=>button.onclick=()=>{appState.runSheetExpanded=!appState.runSheetExpanded;renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-report-issue]').forEach(button=>button.onclick=()=>showToast('Issue noted for the event lead in this demo.'));
+  document.querySelectorAll('[data-toggle-add-person]').forEach(button=>button.onclick=()=>{$('addPersonForm').hidden=!$('addPersonForm').hidden;if(!$('addPersonForm').hidden)$('newPersonName').focus();});
+  document.querySelectorAll('[data-scroll-team]').forEach(button=>button.onclick=()=>document.getElementById('teamRoster')?.scrollIntoView({behavior:'smooth'}));
+  document.querySelectorAll('[data-scroll-confirmations]').forEach(button=>button.onclick=()=>document.getElementById('confirmationPanel')?.scrollIntoView({behavior:'smooth'}));
+  $('addPersonForm')?.addEventListener('submit',event=>{event.preventDefault();const name=$('newPersonName').value.trim();const role=$('newPersonRole').value.trim();if(!name||!role)return;eventOps.team.push({id:`person-${Date.now().toString(36)}`,name,role,contact:$('newPersonContact').value.trim()});persist();renderWorkspace(session.snapshot());});
+  $('customTaskForm')?.addEventListener('submit',event=>{event.preventDefault();const name=$('customTaskName').value.trim();if(!name)return;eventOps.customTasks.push({name,when:$('customTaskWhen').value.trim(),ownerId:$('customTaskOwner').value});persist();renderWorkspace(session.snapshot());});
+  if ($('venueCost')) $('venueCost').onchange=()=>{eventOps.ledger.venue=Math.max(0,Number($('venueCost').value)||0);persist();renderWorkspace(session.snapshot());};
+  if ($('depositPaid')) $('depositPaid').onchange=()=>{eventOps.ledger.depositPaid=$('depositPaid').checked;eventOps.confirmation.deposit=$('depositPaid').checked;persist();renderWorkspace(session.snapshot());};
+  document.querySelectorAll('[data-copy-run]').forEach(button => button.onclick = copyRun);
+  document.querySelectorAll('[data-print-run]').forEach(button => button.onclick = () => window.print());
+  document.querySelectorAll('[data-copy-provider-request]').forEach(button => button.onclick = () => copyText(`Hello — I’m planning ${session.brief.title} for ${session.brief.headcount} guests on ${formatDate(session.brief.serve_at)}. Please confirm availability, final pricing, inclusions, contract terms, and deposit requirements.`,'Copy this provider request:'));
+  document.querySelectorAll('[data-copy-payment-checklist]').forEach(button => button.onclick = () => copyText(`Payment checklist for ${session.brief.title}\n• Confirm final provider price and cancellation terms\n• Verify payee and secure checkout URL\n• Record deposit amount and due date\n• Save receipt and remaining balance date\n• Do not mark paid until the provider confirms`,'Copy this payment checklist:'));
+}
+
+async function copyText(text,promptLabel='Copy this text:') {
+  try { await navigator.clipboard.writeText(text); } catch { window.prompt(promptLabel,text); }
+}
+
+async function copyRun() {
+  const run = session.runOfShow();
+  const text = [`${run.event.title} — ${run.status.toUpperCase()}`,...run.rows.map(row=>`${row.at} | ${row.action} | ${row.owner} | ${row.evidence}`)].join('\n');
+  try { await navigator.clipboard.writeText(text); } catch { window.prompt('Copy the run plan:',text); }
+}
+
+function resetApplication() {
+  currentEventId=null; session.reset(false); session.assess(); booking=null; eventOps=createEventOps();
+  localStorage.removeItem(STATE_KEY); localStorage.removeItem(BOOKING_KEY);
+  $('startBrief').value=''; appState={route:'start',activePhase:'shape',shapeStep:0,proposal:null,packageOptionId:null,catalogMode:null,replaceBasketKey:null,pendingBrief:null,runSheetExpanded:false}; showRoute('start');
+}
+
+$('startForm').addEventListener('submit',event => { event.preventDefault(); const description=$('startBrief').value.trim(); if(!description){$('startError').hidden=false;$('startBrief').focus();return;} $('startError').hidden=true; openBriefReview(description); });
+$('closeBriefReview').onclick=$('editBriefDescription').onclick=()=>{closeOverlay('briefReviewOverlay',{restoreFocus:false});appState.pendingBrief=null;$('startBrief').focus();};
+$('confirmBriefReview').onclick=confirmBriefReview;
+document.querySelectorAll('[data-start-brief]').forEach(button => button.onclick=()=>{ document.querySelectorAll('[data-start-brief]').forEach(item=>item.setAttribute('aria-pressed','false')); button.setAttribute('aria-pressed','true'); $('startBrief').value=button.dataset.startBrief; $('startBrief').focus(); });
+$('sampleWedding').onclick=()=>{ currentEventId='sample-wedding'; booking=null; eventOps=createEventOps(); session.brief={...demo}; session.assess(); persist(); appState.activePhase=firstIncompletePhase(session.snapshot()); renderWorkspace(session.snapshot()); showRoute('workspace'); };
+$('newEventButton').onclick=resetApplication; $('backToEvents').onclick=()=>showRoute('start'); $('backToStart').onclick=()=>showRoute('start');
+$('shapePrevious').onclick=()=>{appState.shapeStep=Math.max(0,appState.shapeStep-1);renderShape();};
+$('shapeNext').onclick=()=>{updateBriefFromFields();appState.shapeStep=Math.min(4,appState.shapeStep+1);renderShape();};
+$('buildPlan').onclick=buildPlan;
+document.querySelectorAll('#shapeView input,#shapeView select').forEach(input => input.addEventListener('input',renderShape));
+document.querySelectorAll('[data-phase]').forEach(button => button.onclick=()=>activatePhase(button.dataset.phase));
+$('closeProposal').onclick=$('cancelProposal').onclick=closeProposal; $('applyProposal').onclick=applyProposal;
+$('closePackage').onclick=$('cancelPackage').onclick=()=>{closeOverlay('packageOverlay');appState.packageOptionId=null;appState.catalogMode=null;appState.replaceBasketKey=null;};
+$('reviewPackage').onclick=()=>{const id=appState.packageOptionId;updatePackageRefinement();closeOverlay('packageOverlay',{restoreFocus:false});openProposal(proposalFor('booking',{optionId:id}));};
+$('packageBody').addEventListener('change',event=>{if(['packageService','packageGuests','packageCleanup'].includes(event.target.id))updatePackageRefinement();});
+$('packageBody').addEventListener('click',event=>{
+  const button=event.target.closest('button');
+  if (!button) return;
+  if (button.dataset.quantityDelta) {
+    mutateActiveBasket(lines=>{const row=lines.find(item=>item.catalogKey===button.dataset.basketKey);return setBasketQuantity(lines,button.dataset.basketKey,Number(row?.quantity||0)+Number(button.dataset.quantityDelta));});
+  } else if (button.dataset.removeItem) {
+    mutateActiveBasket(lines=>setBasketQuantity(lines,button.dataset.removeItem,0));
+  } else if (button.dataset.swapItem) {
+    capturePackageControls(); appState.catalogMode='swap'; appState.replaceBasketKey=button.dataset.swapItem; openPackage(appState.packageOptionId);
+  } else if (button.dataset.openCatalog) {
+    capturePackageControls(); appState.catalogMode='add'; appState.replaceBasketKey=null; openPackage(appState.packageOptionId);
+  } else if (button.hasAttribute('data-close-catalog')) {
+    appState.catalogMode=null; appState.replaceBasketKey=null; openPackage(appState.packageOptionId);
+  } else if (button.hasAttribute('data-reset-basket')) {
+    capturePackageControls(); delete eventOps.packageRefinement.baskets[appState.packageOptionId]; appState.catalogMode=null; appState.replaceBasketKey=null; openPackage(appState.packageOptionId);
+  } else if (button.dataset.catalogItem) {
+    const item=catalog.find(row=>row.catalogKey===button.dataset.catalogItem);
+    if (!item) return;
+    if (appState.catalogMode==='swap') mutateActiveBasket(lines=>swapBasketItem(lines,appState.replaceBasketKey,item));
+    else mutateActiveBasket(lines=>addBasketItem(lines,item,Number(item.minimum||1)));
+    if (appState.catalogMode==='swap') { appState.catalogMode=null; appState.replaceBasketKey=null; openPackage(appState.packageOptionId); }
+  }
+});
+$('openWorkspace').onclick=()=>{closeOverlay('planReadyOverlay',{restoreFocus:false});showRoute('workspace');};
+$('editReadyBrief').onclick=()=>closeOverlay('planReadyOverlay');
+
+session.subscribe(snapshot => { if(appState.route==='workspace') renderWorkspace(snapshot); });
+
+for (const tool of buildEventReadyTools(session,() => {})) {
+  toolHost().registerTool({ ...tool, execute:async input => {
+    const result = tool.run(input || {});
+    if (tool.name === 'reset_demo_event') {
+      booking = null;
+      eventOps = createEventOps();
+    }
+    if (tool.name === 'select_event_plan') {
+      const state=session.snapshot();
+      const option=state.options.find(item=>item.id===state.selectedOptionId);
+      if (option) {
+        const providers=[...new Set((option.items||[]).map(item=>item.vendorName).filter(Boolean))];
+        booking={
+          optionId:option.id,
+          subtotal:option.subtotal,
+          total:option.subtotal,
+          label:providers.join(' + ') || option.label || 'Selected event plan',
+          eventId:currentEventId,
+          eventTitle:state.brief.title,
+          status:'selected',
+          refinement:{...eventOps.packageRefinement},
+          createdAt:new Date().toISOString()
+        };
+        eventOps.commitmentStatus='selected';
+        eventOps.commitmentUpdatedAt=new Date().toISOString();
+      }
+    }
+    if (tool.name === 'change_service_level' && booking) {
+      const state=session.snapshot();
+      const option=state.options.find(item=>item.id===state.selectedOptionId) || state.options[0];
+      if (option) {
+        booking={...booking,optionId:option.id,subtotal:option.subtotal,total:option.subtotal,refinement:{...booking.refinement,serviceLevel:state.serviceLevel}};
+        eventOps.packageRefinement.serviceLevel=state.serviceLevel;
+      }
+    }
+    if (!['get_event_brief','get_readiness_report','get_run_of_show'].includes(tool.name)) {
+      const summary=session.snapshot().delta?.lines?.[0] || `${label(tool.name)} updated the plan.`;
+      recordImpact(summary,'EventReady agent',tool.name);
+    }
+    persist();
+    if (appState.route !== 'workspace') showRoute('workspace');
+    appState.activePhase = firstIncompletePhase(session.snapshot());
+    renderWorkspace(session.snapshot());
+    return { content:[{type:'text',text:JSON.stringify(result)}] };
+  }});
+}
+
+document.addEventListener('keydown',event=>{
+  if (event.key!=='Escape') return;
+  const open=document.querySelector('.overlay:not([hidden])');
+  if (open) closeOverlay(open.id);
+});
+
+session.assess();
+if (booking?.refinement && (!booking.eventId || booking.eventTitle===session.brief.title)) {
+  if (booking.refinement.serviceLevel && booking.refinement.serviceLevel!==session.serviceLevel) session.changeServiceLevel(booking.refinement.serviceLevel);
+  if (booking.optionId && session.snapshot().options.some(option=>option.id===booking.optionId)) session.selectPlan(booking.optionId);
+  if (booking.refinement.basket?.length) session.customizeBasket(booking.refinement.basket);
+}
+if (new URLSearchParams(location.search).get('view') === 'event') {
+  appState.activePhase=firstIncompletePhase(session.snapshot()); renderWorkspace(session.snapshot()); showRoute('workspace');
+} else showRoute('start');

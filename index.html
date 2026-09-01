@@ -1,50 +1,161 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<script>history.scrollRestoration='manual';</script><title>Riverside Fundraiser · EventReady</title>
-<meta name="description" content="Plan the event. Coordinate everyone. Know it is ready.">
-<link rel="stylesheet" href="/shared/fonts.css"><link rel="stylesheet" href="/shared/tailwind.css"><link rel="stylesheet" href="/shared/ui.css"></head>
-<body class="font-sans product-body"><div id="siteHeader"><header class="product-header"><a class="product-brand" href="/">EventReady<span>●</span></a><nav aria-label="Account"><a href="#events">My events</a><button id="newEvent" class="header-action">＋ New event</button><span class="avatar" aria-label="Roy's account">RV</span></nav></header></div>
-<main class="product-shell">
-  <header class="event-titlebar">
-    <div><a class="back-link" href="#events">← My events</a><div class="event-titleline"><h1>Riverside Community Fundraiser</h1><span class="event-state">Planning</span></div><p>Saturday, September 12 · 6:00 PM · Riverside Hall</p></div>
-    <div class="countdown"><strong>12</strong><span>days to go</span></div>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <script>history.scrollRestoration='manual';</script>
+  <title>EventReady · The whole event, held together</title>
+  <meta name="description" content="Bring every service, decision, person, payment, and handoff into one event plan you can confidently run.">
+  <link rel="stylesheet" href="/shared/fonts.css">
+  <link rel="stylesheet" href="/shared/tailwind.css">
+  <link rel="stylesheet" href="/shared/product.css?v=39">
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Skip to main content</a>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="EventReady home"><strong><span class="brand-event">Event</span><span class="brand-ready">Ready</span></strong><small>EVERYTHING IN PLACE</small></a>
+    <nav aria-label="Application"><span id="saveStatus" class="save-status" role="status" aria-live="polite" hidden>Saved</span><a class="nav-link" href="/developers.html">About</a><button id="newEventButton" class="quiet-button" type="button" hidden>Create another event</button></nav>
   </header>
 
-  <nav class="workspace-tabs" aria-label="Event workspace">
-    <button class="workspace-tab active" data-tab="overview">Overview</button><button class="workspace-tab" data-tab="plan">Plan</button><button class="workspace-tab" data-tab="guests">Guests <span>75</span></button><button class="workspace-tab" data-tab="vendors">Vendors <span>4</span></button><button class="workspace-tab" data-tab="budget">Budget</button><button class="workspace-tab" data-tab="team">Team</button><button class="workspace-tab" data-tab="dayof">Day-of</button>
-  </nav>
+  <main id="mainContent" tabindex="-1">
+    <section id="startView" class="start-view">
+      <div class="start-copy">
+        <h1>Plan every moving part. <em>Know your event is ready.</em></h1>
+        <p>Compare services, build the right package, coordinate people and payments, and turn every decision into a day-of plan everyone can run.</p>
+      </div>
 
-  <div class="workspace-layout">
-    <div class="workspace-main">
-      <section class="workspace-view active" data-view="overview">
-        <article class="status-hero needs-attention" id="statusHero"><div class="status-copy"><span class="eyebrow">Event readiness</span><h2 id="statusTitle">Your event needs a few decisions</h2><p id="statusSummary">Everything important is visible. Let’s close the gaps between your venue, vendors, and team.</p><button id="resolveWithAgent" class="primary-action">Resolve with EventReady</button></div><div class="status-orbit"><strong id="decisionCount">7</strong><span>decisions<br>remaining</span></div></article>
+      <form id="startForm" class="brief-composer">
+        <label for="startBrief">What are you planning?</label>
+        <textarea id="startBrief" rows="4" required aria-describedby="startError" placeholder="A wedding for 120 guests next October. We have a venue and a $35,000 budget, but still need catering and a day-of plan."></textarea>
+        <div class="composer-footer">
+          <div class="starter-chips" aria-label="Starting points">
+            <button type="button" aria-pressed="false" data-start-brief="A wedding for 120 guests next October with a $35,000 budget, 14 vegetarians, 6 vegan guests, and 8 gluten-free guests">Wedding</button>
+            <button type="button" aria-pressed="false" data-start-brief="A two-day company gathering for 85 attendees with a $65,000 budget">Work gathering</button>
+            <button type="button" aria-pressed="false" data-start-brief="A milestone birthday celebration for 60 guests with a $9,000 budget">Celebration</button>
+            <button type="button" aria-pressed="false" data-start-brief="A community fundraiser for 180 people with a $20,000 budget">Community event</button>
+          </div>
+          <button class="primary-button" type="submit">Build my event plan <span>→</span></button>
+        </div>
+        <p id="startError" class="form-error" role="alert" hidden>Tell us a little about the event first.</p>
+      </form>
 
-        <div class="overview-grid">
-          <section><div class="section-title"><div><span class="eyebrow">Next up</span><h2>Keep the plan moving</h2></div><button class="text-action" data-tab-jump="plan">View full plan →</button></div><div id="nextActions" class="action-stack"></div></section>
-          <aside><div class="section-title"><div><span class="eyebrow">At a glance</span><h2>Your event</h2></div></div><div class="snapshot-card"><div><span>Guests</span><strong>75</strong></div><div><span>Budget</span><strong>$4,000</strong></div><div><span>Committed</span><strong>$1,026</strong></div><div><span>Team</span><strong>3 people</strong></div></div><div class="mini-timeline"><div class="timeline-done"><i></i><span><strong>Venue selected</strong><small>Riverside Hall</small></span></div><div class="timeline-done"><i></i><span><strong>Catering planned</strong><small>3 provider commitments</small></span></div><div><i></i><span><strong>Confirm responsibilities</strong><small>In progress</small></span></div><div><i></i><span><strong>Share day-of plan</strong><small>After the plan is ready</small></span></div></div></aside>
+      <section class="output-preview" aria-label="What EventReady creates">
+        <div class="section-intro"><span class="kicker">ONE CONNECTED PLAN</span><h2>It gets more complete as you decide</h2><p>Every choice updates the services, responsibilities, budget, and day-of plan that depend on it.</p></div>
+        <div class="output-grid">
+          <article><span>01</span><small>BRIEF ESTABLISHED</small><h3>120 guests at Cedar House</h3><p>Budget, dietary needs, timing, venue constraints, and priorities stay visible.</p></article>
+          <article><span>02</span><small>SERVICES COMPARED</small><h3>Coverage before price alone</h3><p>See what each option covers, what it costs, and what work it leaves behind.</p></article>
+          <article><span>03</span><small>PEOPLE &amp; MONEY</small><h3>Every commitment has an owner</h3><p>Connect providers, your team, payments, dependencies, and open responsibilities.</p></article>
+          <article><span>04</span><small>DAY-OF PLAN</small><h3>Every handoff in sequence</h3><p>Run the event from a chronological plan that names who does what and when.</p></article>
         </div>
       </section>
 
-      <section class="workspace-view" data-view="plan"><div class="view-heading"><div><span class="eyebrow">Event blueprint</span><h2>Everything your event needs</h2><p>One plan from the first guest arrival through cleanup.</p></div><button class="secondary-action">＋ Add plan item</button></div><div id="planCategories" class="category-grid"></div></section>
+      <section class="sample-plans" aria-label="Sample plans">
+        <div class="section-intro"><span class="kicker">EXPLORE A COMPLETE EXAMPLE</span><h2>See EventReady in action</h2></div>
+        <button id="sampleWedding" class="sample-plan" type="button"><span class="event-mark wedding">A&amp;J</span><span><strong>Alex &amp; Jordan’s Wedding</strong><small>October 17 · Cedar House · 120 guests</small></span><span class="sample-status"><b>10</b><small>decisions open</small></span><span>Open plan →</span></button>
+      </section>
+      <section id="savedEventsSection" class="sample-plans" aria-label="Your saved events" hidden>
+        <div class="section-intro"><span class="kicker">SAVED ON THIS DEVICE</span><h2>Continue planning</h2></div>
+        <div id="savedEventsList" class="saved-events"></div>
+      </section>
+    </section>
 
-      <section class="workspace-view" data-view="guests"><div class="view-heading"><div><span class="eyebrow">Guests</span><h2>75 people are expected</h2><p>Attendance, food needs, accessibility, and communications in one place.</p></div><button class="secondary-action">＋ Add guests</button></div><div class="metric-row"><div><span>Invited</span><strong>88</strong></div><div><span>Attending</span><strong>75</strong></div><div><span>Awaiting reply</span><strong>8</strong></div><div><span>Declined</span><strong>5</strong></div></div><div class="content-card"><div class="card-heading"><h3>Guest needs</h3><span>21 accommodations</span></div><div class="guest-needs"><div><span>Vegetarian</span><strong>10</strong></div><div><span>Vegan</span><strong>6</strong></div><div><span>Gluten free</span><strong>5</strong></div><div><span>Wheelchair access</span><strong>2</strong></div></div></div></section>
+    <section id="shapeView" class="shape-view" hidden>
+      <div class="shape-progress"><button id="backToStart" type="button">← Back</button><div><span id="shapeProgressText">Step 1 of 5</span><i id="shapeProgressTrack" role="progressbar" aria-label="Event setup progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"><b id="shapeProgressBar"></b></i></div></div>
+      <div class="shape-layout">
+        <section class="decision-pane">
+          <span class="kicker">SHAPE YOUR EVENT</span>
+          <div id="shapeSteps">
+            <fieldset class="shape-step active" data-shape-step="0"><legend>What kind of moment is this?</legend><p>Give the plan a name and choose the closest starting point.</p><label>Event name<input id="fieldTitle" type="text" required autocomplete="off"></label><label>Event type<select id="fieldType"><option value="wedding">Wedding</option><option value="work event">Work gathering</option><option value="celebration">Celebration</option><option value="community event">Community event</option></select></label></fieldset>
+            <fieldset class="shape-step" data-shape-step="1"><legend>When and where will it happen?</legend><p>These details drive provider availability, arrival windows, and the run-of-show.</p><div class="field-pair"><label>Date<input id="fieldDate" type="date" required></label><label>Service time<input id="fieldTime" type="time" required></label></div><label>Venue<input id="fieldVenue" type="text" autocomplete="street-address"></label><label class="check-row"><input id="fieldKitchen" type="checkbox"> The venue has a working kitchen</label></fieldset>
+            <fieldset class="shape-step" data-shape-step="2"><legend>Who needs to be considered?</legend><p>Attendance and dietary needs determine real service coverage.</p><label>Expected guests<input id="fieldGuests" type="number" inputmode="numeric" min="1" max="2000" required></label><div class="field-trio"><label>Vegetarian<input id="fieldVegetarian" type="number" inputmode="numeric" min="0"></label><label>Vegan<input id="fieldVegan" type="number" inputmode="numeric" min="0"></label><label>Gluten free<input id="fieldGlutenFree" type="number" inputmode="numeric" min="0"></label></div></fieldset>
+            <fieldset class="shape-step" data-shape-step="3"><legend>What should guide the plan?</legend><p>Budget and service priorities help rank sensible alternatives.</p><label>Total working budget<div class="money-field"><span>$</span><input id="fieldBudget" type="number" min="0"></div></label><label>Top priority<select id="fieldPriority"><option value="coverage">Complete coverage</option><option value="coordination">Lowest coordination burden</option><option value="budget">Stay under budget</option><option value="experience">Guest experience</option></select></label></fieldset>
+            <fieldset class="shape-step" data-shape-step="4"><legend>What is already handled?</legend><p>EventReady will focus on the seams that still need an owner.</p><label class="helper-count">Available helpers<input id="fieldHelpers" type="number" min="0" max="100"></label><div class="already-list"><label><input type="checkbox" checked disabled><span>Venue selected</span></label><label><input id="fieldFoodBooked" type="checkbox"><span>Catering already booked</span></label><label><input id="fieldEquipmentHandled" type="checkbox"><span>Serving equipment handled</span></label></div></fieldset>
+          </div>
+          <div class="shape-actions"><button id="shapePrevious" class="secondary-button" type="button">Previous</button><button id="shapeNext" class="primary-button" type="button">Continue</button><button id="buildPlan" class="primary-button" type="button" hidden>Build my plan →</button></div>
+        </section>
 
-      <section class="workspace-view" data-view="vendors"><div class="view-heading"><div><span class="eyebrow">Vendors</span><h2>Four partners, one coordinated plan</h2><p>See what each provider covers—and what they leave to your team.</p></div><button class="secondary-action">＋ Add vendor</button></div><div class="vendor-list"><article><div class="vendor-mark green">GF</div><div><h3>Green Fork Kitchen</h3><p>Catering · Main service</p></div><span class="vendor-status confirmed">Confirmed</span><strong>$678</strong></article><article><div class="vendor-mark orange">CV</div><div><h3>Casa Vieja</h3><p>Catering · Specialty trays</p></div><span class="vendor-status confirmed">Confirmed</span><strong>$177</strong></article><article><div class="vendor-mark purple">PP</div><div><h3>Prime Platters</h3><p>Catering · Cold platters</p></div><span class="vendor-status confirmed">Confirmed</span><strong>$171</strong></article><article><div class="vendor-mark blue">RH</div><div><h3>Riverside Hall</h3><p>Venue · Space only</p></div><span class="vendor-status action">Needs details</span><strong>Booked</strong></article></div></section>
+        <aside class="live-plan" aria-label="Live event plan preview">
+          <header><span>LIVE PLAN</span><small>Updates as you decide</small></header>
+          <div class="preview-identity"><span id="previewType">Wedding</span><h2 id="previewTitle">Alex &amp; Jordan’s Wedding</h2><p id="previewMeta">October 17 · Cedar House</p></div>
+          <div class="preview-metrics"><div><span>Guests</span><strong id="previewGuests">120</strong></div><div><span>Budget</span><strong id="previewBudget">$35,000</strong></div><div><span>Known needs</span><strong id="previewNeeds">3</strong></div></div>
+          <section><h3>What the plan is accounting for</h3><div id="previewRequirements" class="requirement-list"></div></section>
+          <section><h3>Working path</h3><ol class="preview-path"><li class="done">Venue selected</li><li>Compare compatible services</li><li>Assign operational work</li><li>Confirm readiness</li><li>Share the run plan</li></ol></section>
+          <p class="preview-note"><span>i</span> Assumptions stay visible and editable. Nothing is booked or paid without an explicit action.</p>
+        </aside>
+      </div>
+    </section>
 
-      <section class="workspace-view" data-view="budget"><div class="view-heading"><div><span class="eyebrow">Budget</span><h2>$2,974 still available</h2><p>Your committed costs leave room for staffing, rentals, and contingency.</p></div><button class="secondary-action">Adjust budget</button></div><div class="budget-hero"><div><span>Committed</span><strong>$1,026</strong><small>of $4,000</small></div><div class="budget-bar"><i></i></div><p>26% of budget committed</p></div><div class="content-card"><div class="budget-line"><span>Catering</span><strong>$1,026</strong></div><div class="budget-line"><span>Venue</span><strong>Already paid</strong></div><div class="budget-line"><span>Equipment allowance</span><strong>$450</strong></div><div class="budget-line"><span>Contingency</span><strong>$400</strong></div></div></section>
+    <section id="workspaceView" class="workspace-view" hidden>
+      <header class="event-header">
+        <div><button id="backToEvents" class="back-button" type="button">← Events</button><div class="event-heading"><span id="eventAccent" class="event-mark wedding">A&amp;J</span><div><span id="eventKindLabel" class="sample-label">SAMPLE PLAN</span><h1 id="eventTitle">Alex &amp; Jordan’s Wedding</h1><p id="eventMeta">Saturday, October 17 · 6:00 PM · Cedar House</p></div></div></div>
+        <div class="event-health"><span>EVENT READINESS</span><strong id="eventHealth" aria-live="polite">10 decisions remaining</strong><small id="eventCountdown">49 days to go</small></div>
+      </header>
 
-      <section class="workspace-view" data-view="team"><div class="view-heading"><div><span class="eyebrow">Team</span><h2>Give every job a person</h2><p>EventReady separates vendor commitments from responsibilities your team still owns.</p></div><button id="assignTeam" class="secondary-action">Assign remaining to Roy</button></div><div id="teamList" class="team-list"></div></section>
+      <div class="command-layout">
+        <nav id="phaseRail" class="phase-rail" aria-label="Planning phases">
+          <button data-phase="shape"><span>1</span><div><strong>Shape</strong><small>Brief and constraints</small></div><i></i></button>
+          <button data-phase="source"><span>2</span><div><strong>Source</strong><small>Services and tradeoffs</small></div><i></i></button>
+          <button data-phase="coordinate"><span>3</span><div><strong>Coordinate</strong><small>Owners and money</small></div><i></i></button>
+          <button data-phase="prepare"><span>4</span><div><strong>Prepare</strong><small>Close the gaps</small></div><i></i></button>
+          <button data-phase="run"><span>5</span><div><strong>Run</strong><small>Day-of operating plan</small></div><i></i></button>
+        </nav>
 
-      <section class="workspace-view" data-view="dayof"><div class="view-heading"><div><span class="eyebrow">Day-of</span><h2 id="runHeading">Your working run-of-show</h2><p id="runDescription">This remains a draft until every critical need and responsibility is resolved.</p></div><div><button id="copyRun" class="secondary-action">Copy plan</button><button id="printRun" class="secondary-action">Print</button></div></div><div class="dayof-banner" id="dayofBanner"><span>Draft</span><p>Resolve the remaining decisions before sharing this with your team.</p></div><div id="runRows" class="dayof-timeline"></div></section>
-    </div>
+        <div class="phase-canvas">
+          <section class="phase-view" data-phase-view="shape"></section>
+          <section class="phase-view" data-phase-view="source"></section>
+          <section class="phase-view" data-phase-view="coordinate"></section>
+          <section class="phase-view" data-phase-view="prepare"></section>
+          <section class="phase-view" data-phase-view="run"></section>
+        </div>
+      </div>
+      <section id="planActivity" class="plan-activity" aria-labelledby="planActivityTitle"></section>
+    </section>
+  </main>
 
-    <aside class="assistant-panel" aria-label="EventReady assistant"><header><div class="assistant-icon">✦</div><div><strong>EventReady assistant</strong><span>Working with this event</span></div><button id="closeAssistant" aria-label="Close assistant">×</button></header><div id="assistantMessages" class="assistant-messages"><div class="assistant-message"><p>I checked the venue, catering plan, guest needs, and day-of timing.</p><p>I found several jobs that are required but don’t have an owner yet. I can resolve the service conflict and prepare the remaining assignments.</p></div><button id="reviewChanges" class="assistant-cta">Review my plan</button></div><div class="assistant-composer"><input id="assistantInput" aria-label="Ask EventReady" placeholder="Ask about this event…"><button id="sendAssistant" aria-label="Send">↑</button></div></aside>
+  <div id="briefReviewOverlay" class="overlay" hidden>
+    <section class="proposal-sheet brief-review-sheet" role="dialog" aria-modal="true" aria-labelledby="briefReviewTitle" tabindex="-1">
+      <header><div><span class="kicker">YOUR EVENT BRIEF</span><h2 id="briefReviewTitle">Here’s what EventReady understood.</h2></div><button id="closeBriefReview" type="button" aria-label="Close">×</button></header>
+      <p>Confirm the essentials before we build the plan. Assumptions stay visible and can be refined next.</p>
+      <div class="brief-review-grid">
+        <label><span>Event name <small>Inferred</small></span><input id="reviewTitle" type="text"></label>
+        <label><span>Event type <small>Inferred</small></span><select id="reviewType"><option value="wedding">Wedding</option><option value="work event">Work gathering</option><option value="celebration">Celebration</option><option value="community event">Community event</option></select></label>
+        <label><span>Guest count <small id="reviewGuestsSource">From your description</small></span><input id="reviewGuests" type="number" min="1" max="2000"></label>
+        <label><span>Working budget <small id="reviewBudgetSource">From your description</small></span><div class="money-field"><span>$</span><input id="reviewBudget" type="number" min="0"></div></label>
+      </div>
+      <div id="briefReviewNeeds" class="brief-review-needs"></div>
+      <aside class="assumption-note"><strong>Still to confirm</strong><span>Date, venue, service time, kitchen access, and planning priorities.</span></aside>
+      <footer><button id="editBriefDescription" class="secondary-button" type="button">Edit description</button><button id="confirmBriefReview" class="primary-button" type="button">Continue with this brief →</button></footer>
+    </section>
   </div>
-</main>
 
-<div id="proposalModal" class="product-modal" hidden><div class="modal-card"><header><span class="assistant-icon">✦</span><div><span class="eyebrow">EventReady recommendation</span><h2>Close the operational gaps</h2></div><button id="closeProposal" aria-label="Close">×</button></header><p>I compared provider commitments with Riverside Hall’s requirements. These changes remove the timing conflict and give every required job an owner.</p><div class="proposal-list"><div><span>Switch catering from pickup to delivery</span><strong>Removes 2 trips</strong></div><div><span>Assign setup and receiving to Roy</span><strong>3 jobs</strong></div><div><span>Assign service support and cleanup to Roy</span><strong>4 jobs</strong></div></div><div class="proposal-result"><span>Result</span><strong>Your event will be ready</strong></div><footer><button id="cancelProposal" class="secondary-action">Not now</button><button id="applyProposal" class="primary-action">Apply 3 changes</button></footer></div></div>
+  <div id="proposalOverlay" class="overlay" hidden>
+    <section class="proposal-sheet" role="dialog" aria-modal="true" aria-labelledby="proposalTitle" tabindex="-1">
+      <header><div><span class="kicker">REVIEW CHANGE</span><h2 id="proposalTitle">Review this change</h2></div><button id="closeProposal" type="button" aria-label="Close">×</button></header>
+      <p id="proposalSummary"></p>
+      <div id="proposalDelta" class="proposal-delta"></div>
+      <div id="proposalRisks" class="proposal-risks"></div>
+      <footer><button id="cancelProposal" class="secondary-button" type="button">Cancel</button><button id="applyProposal" class="primary-button" type="button">Apply change</button></footer>
+    </section>
+  </div>
 
-<div id="newEventModal" class="product-modal" hidden><div class="modal-card new-event-card"><header><div><span class="eyebrow">New event</span><h2>What are you planning?</h2></div><button id="closeNewEvent" aria-label="Close">×</button></header><textarea class="event-prompt" aria-label="Describe your event" placeholder="A graduation party for 40 people at our home in June…"></textarea><div class="template-row"><button>Wedding</button><button>Birthday</button><button>Fundraiser</button><button>Work event</button></div><footer><button id="cancelNewEvent" class="secondary-action">Cancel</button><button class="primary-action">Create my plan</button></footer></div></div>
+  <div id="packageOverlay" class="overlay" hidden>
+    <section class="proposal-sheet package-sheet" role="dialog" aria-modal="true" aria-labelledby="packageTitle" tabindex="-1">
+      <header><div><span class="kicker">PACKAGE WORKBENCH</span><h2 id="packageTitle">Review service package</h2></div><button id="closePackage" type="button" aria-label="Close">×</button></header>
+      <div id="packageBody"></div>
+      <footer><button id="cancelPackage" class="secondary-button" type="button">Back to results</button><button id="reviewPackage" class="primary-button" type="button">Review commitment →</button></footer>
+    </section>
+  </div>
 
-<footer class="product-footer"><span>EventReady · Plan the event. Coordinate everyone. Know it’s ready.</span><a href="/developers.html">Built with WebMCP · Developer details</a></footer>
-<script type="module" src="/shared/eventready-ui.js"></script></body></html>
+  <div id="planReadyOverlay" class="overlay" hidden>
+    <section class="proposal-sheet plan-ready-sheet" role="dialog" aria-modal="true" aria-labelledby="planReadyTitle" tabindex="-1">
+      <header><div><span class="kicker">WORKSPACE CREATED</span><h2 id="planReadyTitle">Your event has a working plan.</h2></div></header>
+      <p id="planReadySummary">EventReady has translated the brief into requirements, service decisions, responsibilities, and a readiness path.</p>
+      <div class="ready-preview"><div><span>Next phase</span><strong>Source compatible services</strong></div><div><span>Saved</span><strong>On this device</strong></div></div>
+      <footer><button id="editReadyBrief" class="secondary-button" type="button">Keep editing</button><button id="openWorkspace" class="primary-button" type="button">Open workspace →</button></footer>
+    </section>
+  </div>
+
+  <div id="appToast" class="app-toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="/shared/eventready-ui.js?v=13"></script>
+</body>
+</html>

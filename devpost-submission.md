@@ -20,7 +20,7 @@ Event failure usually happens in the seams between otherwise valid purchases. Ev
 
 ## How We Used AI
 
-The product is designed for agent-human collaboration. An agent can read the brief, assess multiple provider contracts, retrieve the readiness report, select a plan, change a service level, confirm an assumption, and generate the run-of-show. The human retains the decisions that create commitments: selecting tradeoffs, confirming inferred values, and assigning responsibility. Tool calls update the same EventSession rendered on screen, so the user can see and verify every state change. Provider content remains untrusted data: injection-like instructions are quarantined, unknown fields do not influence ranking, and external text is escaped before rendering.
+The product is designed for agent-human collaboration. An agent can read the brief, assess multiple provider contracts, retrieve the readiness report, select a plan, change a service level, confirm an assumption, and generate the run-of-show. The human retains the decisions that create commitments: selecting tradeoffs, confirming inferred values, and assigning responsibility. Tool calls update the same EventSession rendered on screen, and meaningful interface and WebMCP mutations leave a shared-plan activity receipt naming the actor and channel. Provider content remains untrusted data: injection-like instructions are quarantined, unknown fields do not influence ranking, and external text is escaped before rendering.
 
 ## How We Used Codex
 
@@ -33,7 +33,8 @@ Codex was used to audit the original catering prototype against the judging crit
 - Multiple plan alternatives with concrete cost and coverage tradeoffs.
 - Changed-only feedback when service level, plan, assumptions, or ownership changes.
 - Draft/Ready run-of-show with time, action, owner, and evidence on every row.
-- Nine narrow application-level WebMCP tools backed by the visible EventSession.
+- Eight outcome-oriented WebMCP tools backed by the visible EventSession, plus one clearly separated demo-reset utility.
+- Inspectable shared-plan receipts that distinguish interface changes from WebMCP Actions.
 - Source-gradient proof across WebMCP, schema.org, price-table, document, and unpublished tiers.
 - Injection quarantine, field allowlists, escaped provider output, and non-binding holds.
 - Judge Mode and a browser-independent manual tool harness.
@@ -45,14 +46,14 @@ EventReady is a dependency-free static application. Pure planning and trust modu
 ## Testing Instructions
 
 1. Open https://eventready-webmcp.vercel.app/ in ChatGPT's in-app browser or WebMCP-enabled desktop Chrome.
-2. Explore the active fundraiser across Overview, Plan, Guests, Vendors, Budget, Team, and Day-of.
-3. In the EventReady assistant, click **Review my plan**.
-4. Review and apply the proposed service and responsibility changes.
-5. Confirm the event becomes **Ready** and the 17-row day-of plan has no unassigned owner.
+2. Choose Alex & Jordan’s 120-person wedding sample and compare the ranked plans in Source.
+3. Review and apply the recommended local test commitment; no provider is contacted and no payment is taken.
+4. Review the ownership proposal in Coordinate, then resolve the delivery blocker in Prepare.
+5. Confirm the event becomes **Ready** and Run contains a chronological plan with no unassigned owner.
 6. Open `/developers.html` for the product's WebMCP explanation or `/judge.html` for the direct verification path.
-7. Locally, run `npm test` for 196 deterministic tests and `npm run dev` for the static site.
+7. Locally, run `npm test` for 203 deterministic tests, `npm run smoke` for the submission preflight, and `npm run dev` for the static site.
 
-Tested with the Codex/ChatGPT in-app browser's native WebMCP support. Production verification found all nine tools, completed the canonical flow, loaded Judge Mode, and produced no console errors.
+Tested locally with the Codex/ChatGPT in-app browser's native WebMCP support. Local verification found all nine registered contracts, completed the canonical flow, and produced no console errors. Production is reverified after each release with the submission smoke suite.
 
 ## Public Demo Link
 
@@ -66,29 +67,22 @@ https://github.com/royvergara/eventready-webmcp
 
 **TODO: record and add a public YouTube URL (required, under 3 minutes, with audio).**
 
-Suggested 2:30 outline:
-
-- 0:00–0:20 — “Booked is not ready”: introduce the accidental event operator and hidden seams.
-- 0:20–0:50 — Show the fundraiser brief and initial assessment across six domains.
-- 0:50–1:25 — Show blockers and unowned work; change Pickup to Delivery.
-- 1:25–1:50 — Assign remaining jobs; reveal Ready and the run-of-show.
-- 1:50–2:15 — Use the WebMCP tool inventory/harness and explain shared visible state.
-- 2:15–2:30 — Show Judge Mode, security proof, repo, and close on broader event-readiness impact.
+The complete timed narration, exact click order, native-WebMCP prompt, preflight, fallback, and claims checklist are in [`docs/demo-script.md`](docs/demo-script.md). The target cut is 2:35–2:45 and demonstrates a real agent mutation path rather than a purely narrated interface tour.
 
 ## Screenshot Shot List
 
-1. Hero plus prefilled event brief and readiness card before assessment.
-2. Assessed Blocked state with six domains and explicit unowned work.
-3. Service/ownership resolution with changed-only feedback.
-4. Ready state and the evidence-backed run-of-show.
+1. Standalone new-event entry and the relatable wedding sample.
+2. Source comparison with requirements, burden, blockers, evidence, and price.
+3. Test-commitment and ownership proposal review sheets.
+4. Ready state and the evidence-backed chronological run-of-show.
 5. Judge Mode or tool harness showing the nine EventReady tools.
 
 ## Submission Readiness Notes
 
 - Live app: deployed and verified on production.
 - Public repo: pushed with source, setup instructions, and MIT license.
-- Tests: 196/196 passing.
-- Native WebMCP: nine tools discovered in the in-app browser.
+- Tests: 203/203 passing.
+- Native WebMCP: eight outcome tools and one demo utility discovered in the in-app browser. A clean production rehearsal selected a plan, changed service level, assigned all unresolved work, reached a 100% Ready report, produced a ready run-of-show, and left visible agent receipts with zero console errors.
 - Devpost account: authenticated and registered for The WebMCP Challenge.
 - Remaining hard requirement: public narrated YouTube demo under three minutes.
 

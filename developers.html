@@ -1,5 +1,133 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>history.scrollRestoration='manual';</script><title>Developers · EventReady</title><link rel="stylesheet" href="/shared/fonts.css"><link rel="stylesheet" href="/shared/tailwind.css"><link rel="stylesheet" href="/shared/ui.css"></head><body class="font-sans"><div id="siteHeader"></div><main class="mx-auto max-w-3xl px-5 py-8"><div class="sheethead"><div class="sheethead-band"><p class="kicker"><span class="kicker-no">DEV</span>EventReady for agents</p><p class="sheethead-meta">WebMCP implementation</p></div><h1>The event workspace people and agents can plan together.</h1><p class="lede">EventReady keeps guests, vendors, budget, ownership, and the day-of schedule in one visible event model. WebMCP lets an agent understand and update that same plan.</p></div>
-<section class="chit mb-4"><div class="chit-head"><span class="chit-title">How it uses WebMCP</span><span class="chit-note">9 site tools</span></div><div class="chit-body text-[15px] text-ink-soft space-y-2"><p class="m-0">An agent can read the event brief, assess readiness, inspect unresolved work, select a provider plan, change service level, confirm assumptions, assign responsibilities, and produce the run-of-show.</p><p class="m-0">Every call operates on the same <code class="font-mono text-[13px] bg-paper-sunk px-1">EventSession</code> the consumer interface renders. Human decisions remain visible and reviewable; tools never place orders or silently accept commitments.</p></div></section>
-<section class="chit mb-4"><div class="chit-head"><span class="chit-title">Site tools</span><span class="chit-note">3 read · 6 action</span></div><div class="chit-body"><div class="grid gap-3 sm:grid-cols-2 text-[14px]"><div><strong class="font-mono">get_event_brief</strong><p class="text-ink-mute m-0">Current event facts and provenance.</p></div><div><strong class="font-mono">assess_event_readiness</strong><p class="text-ink-mute m-0">Coverage, timing, ownership and blockers.</p></div><div><strong class="font-mono">get_readiness_report</strong><p class="text-ink-mute m-0">Domains, risks and responsibilities.</p></div><div><strong class="font-mono">select_event_plan</strong><p class="text-ink-mute m-0">Choose a visible plan alternative.</p></div><div><strong class="font-mono">assign_responsibility</strong><p class="text-ink-mute m-0">Give required work an explicit owner.</p></div><div><strong class="font-mono">change_service_level</strong><p class="text-ink-mute m-0">Recalculate provider and human work.</p></div><div><strong class="font-mono">confirm_event_assumption</strong><p class="text-ink-mute m-0">Correct an assumption without losing intent.</p></div><div><strong class="font-mono">get_run_of_show</strong><p class="text-ink-mute m-0">Chronological, evidence-backed handoff.</p></div><div><strong class="font-mono">reset_demo_event</strong><p class="text-ink-mute m-0">Restore the canonical fundraiser.</p></div></div></div></section>
-<section class="grid gap-3 sm:grid-cols-2 mb-4"><a class="chit no-underline text-ink block" href="/harness.html"><div class="chit-body"><strong>Run the tools</strong><p class="text-[14px] text-ink-soft m-0">Manual harness using the page-owned registry.</p></div></a><a class="chit no-underline text-ink block" href="/gradient.html"><div class="chit-body"><strong>Inspect source quality</strong><p class="text-[14px] text-ink-soft m-0">WebMCP through schema, table, document, and nothing.</p></div></a><a class="chit no-underline text-ink block" href="/smoke.html"><div class="chit-body"><strong>Verify discovery</strong><p class="text-[14px] text-ink-soft m-0">Small native discovery and execution check.</p></div></a><a class="chit no-underline text-ink block" href="/judge.html"><div class="chit-body"><strong>Judge Mode</strong><p class="text-[14px] text-ink-soft m-0">The complete two-minute verification path.</p></div></a></section>
-<section class="chit"><div class="chit-head"><span class="chit-title">Trust and verification</span></div><div class="chit-body text-[15px] text-ink-soft space-y-2"><p class="m-0"><strong>Provider content is data:</strong> fixed field allowlists, injection quarantine, escaped rendering, and deterministic ranking.</p><p class="m-0"><strong>196 tests:</strong> planning, source trust, contracts, ownership, readiness, tools, layout prerequisites, and hostile input.</p><p class="m-0"><strong>Open source:</strong> github.com/royvergara/eventready-webmcp · MIT license.</p><p class="m-0"><a href="/">← Return to EventReady</a></p></div></section></main><script type="module">import{mountHeader}from'/shared/ui.js';mountHeader('Developer details');</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <script>history.scrollRestoration='manual';</script>
+  <title>EventReady documentation · WebMCP implementation</title>
+  <meta name="description" content="Technical documentation for EventReady's WebMCP architecture, tools, shared state, safety boundaries, and verification surfaces.">
+  <link rel="stylesheet" href="/shared/fonts.css">
+  <link rel="stylesheet" href="/shared/tailwind.css">
+  <link rel="stylesheet" href="/shared/product.css?v=39">
+</head>
+<body class="docs-body">
+  <a class="skip-link" href="#overview">Skip to documentation</a>
+  <header class="app-header docs-header">
+    <a class="brand" href="/" aria-label="EventReady home"><strong><span class="brand-event">Event</span><span class="brand-ready">Ready</span></strong><small>EVERYTHING IN PLACE</small></a>
+    <nav aria-label="Documentation"><a class="nav-link" href="/">Product</a><a class="nav-link" href="/judge.html">Judge Mode</a><a class="quiet-button" href="/harness.html">Tool harness</a></nav>
+  </header>
+
+  <div class="docs-shell">
+    <aside class="docs-sidebar" aria-label="Documentation sections">
+      <div><strong>EventReady</strong><span>Technical documentation</span></div>
+      <nav>
+        <a href="#overview" aria-current="location">Overview</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#experience-model">Experience model</a>
+        <a href="#tool-contracts">Tool contracts</a>
+        <a href="#shared-state">Shared state</a>
+        <a href="#safety">Safety boundaries</a>
+        <a href="#verification">Verification</a>
+        <a href="#resources">Resources</a>
+      </nav>
+      <footer><span>Implementation status</span><strong><i></i> Prototype verified</strong><small>203 deterministic tests</small></footer>
+    </aside>
+
+    <main class="docs-content">
+      <nav class="docs-mobile-nav" aria-label="On this page">
+        <a href="#overview">Overview</a><a href="#architecture">Architecture</a><a href="#tool-contracts">Tools</a><a href="#shared-state">State</a><a href="#safety">Safety</a><a href="#verification">Verify</a>
+      </nav>
+
+      <article>
+        <section id="overview" class="docs-intro docs-section">
+          <p class="docs-path">Documentation / WebMCP implementation</p>
+          <h1>A shared event plan for people and agents.</h1>
+          <p class="docs-lede">EventReady turns an event brief into one visible operating model for services, budget, ownership, readiness, and the day-of plan. WebMCP lets an assistant read and update that same model without bypassing the product interface.</p>
+          <div class="docs-actions"><a class="primary-button" href="/?view=event">Open the sample plan →</a><a class="secondary-button" href="/judge.html">Follow Judge Mode</a></div>
+          <dl class="docs-summary" aria-label="8 outcome tools, 1 demo utility, 0 sensitive actions, 203 tests"><div><dt>8</dt><dd>outcome tools</dd></div><div><dt>1</dt><dd>demo utility</dd></div><div><dt>0</dt><dd>sensitive actions</dd></div><div><dt>203</dt><dd>deterministic tests</dd></div></dl>
+        </section>
+
+        <section id="architecture" class="docs-section">
+          <h2>Architecture</h2>
+          <p>EventReady is a dependency-free static application. Pure planning modules evaluate provider contracts and event requirements. A single <code>EventSession</code> coordinates those outputs, and both the consumer interface and WebMCP registry operate on that same session.</p>
+          <div class="architecture-flow" role="img" aria-label="Provider and venue contracts flow into the planning engine, then EventSession, then both the EventReady interface and WebMCP tools">
+            <div><span>Structured inputs</span><strong>Provider + venue contracts</strong></div><b>→</b><div><span>Deterministic logic</span><strong>Planning + readiness engine</strong></div><b>→</b><div class="active"><span>Shared state</span><strong>EventSession</strong></div><b>→</b><div><span>Two interfaces</span><strong>Product UI + WebMCP</strong></div>
+          </div>
+          <div class="docs-note"><strong>Core invariant</strong><p>The page remains the source of truth. A tool does not maintain a hidden copy of the plan or produce a result the user cannot inspect.</p></div>
+        </section>
+
+        <section id="experience-model" class="docs-section">
+          <h2>Experience model</h2>
+          <p>The tool surface follows the customer journey instead of mirroring buttons or internal endpoints.</p>
+          <ol class="docs-steps">
+            <li><span>1</span><div><strong>Understand</strong><p>Structure the brief and preserve provenance.</p></div></li><li><span>2</span><div><strong>Assess</strong><p>Find coverage, timing, budget, and ownership gaps.</p></div></li><li><span>3</span><div><strong>Compare</strong><p>Rank complete service plans by operational fit.</p></div></li><li><span>4</span><div><strong>Compose</strong><p>Refine the event basket and service level.</p></div></li><li><span>5</span><div><strong>Coordinate</strong><p>Give each remaining responsibility an owner.</p></div></li><li><span>6</span><div><strong>Confirm</strong><p>Keep external commitments explicit and human-controlled.</p></div></li><li><span>7</span><div><strong>Run</strong><p>Produce a chronological operating plan.</p></div></li>
+          </ol>
+        </section>
+
+        <section id="tool-contracts" class="docs-section">
+          <h2>Tool contracts</h2>
+          <p>Nine contracts are registered on the page: three read-only Answer tools, five product Actions, and one clearly separated demo utility.</p>
+          <div class="tool-table" role="table" aria-label="EventReady WebMCP tools">
+            <div class="tool-table-head" role="row"><span role="columnheader">Tool</span><span role="columnheader">Class</span><span role="columnheader">Purpose</span></div>
+            <div role="row"><code role="cell">get_event_brief</code><span role="cell" class="tool-kind answer">Answer</span><p role="cell">Read current event facts and provenance.</p></div>
+            <div role="row"><code role="cell">assess_event_readiness</code><span role="cell" class="tool-kind action">Action</span><p role="cell">Assess coverage, timing, ownership, and blockers.</p></div>
+            <div role="row"><code role="cell">get_readiness_report</code><span role="cell" class="tool-kind answer">Answer</span><p role="cell">Read domains, risks, responsibilities, and status.</p></div>
+            <div role="row"><code role="cell">select_event_plan</code><span role="cell" class="tool-kind action">Action</span><p role="cell">Choose one visible service-plan alternative.</p></div>
+            <div role="row"><code role="cell">assign_responsibility</code><span role="cell" class="tool-kind action">Action</span><p role="cell">Give required work an explicit owner.</p></div>
+            <div role="row"><code role="cell">change_service_level</code><span role="cell" class="tool-kind action">Action</span><p role="cell">Recalculate provider and human responsibilities.</p></div>
+            <div role="row"><code role="cell">confirm_event_assumption</code><span role="cell" class="tool-kind action">Action</span><p role="cell">Correct an assumption without losing intent.</p></div>
+            <div role="row"><code role="cell">get_run_of_show</code><span role="cell" class="tool-kind answer">Answer</span><p role="cell">Read the chronological operating handoff.</p></div>
+            <div role="row"><code role="cell">reset_demo_event</code><span role="cell" class="tool-kind utility">Utility</span><p role="cell">Restore the canonical wedding scenario.</p></div>
+          </div>
+          <p class="docs-caption">No tool books a provider, sends a message, charges a card, or accepts terms.</p>
+        </section>
+
+        <section id="shared-state" class="docs-section">
+          <h2>Shared state and visible receipts</h2>
+          <p>Mutating tools run against the same session used by the interface. After execution, EventReady persists the updated plan, routes the user to the relevant phase, and records a Shared plan activity receipt naming the agent and exact tool.</p>
+          <pre aria-label="Example WebMCP action receipt"><code>{
+  "actor": "EventReady agent",
+  "channel": "change_service_level",
+  "message": "Delivery moved collection work to the provider plan.",
+  "visible": true
+}</code></pre>
+          <div class="state-rules"><div><strong>Answer calls</strong><p>Return structured state without creating a mutation receipt.</p></div><div><strong>Action calls</strong><p>Update EventSession, persist the plan, and leave an inspectable receipt.</p></div><div><strong>Human changes</strong><p>Use the same trail with the channel labeled Interface.</p></div></div>
+        </section>
+
+        <section id="safety" class="docs-section">
+          <h2>Safety boundaries</h2>
+          <p>External provider content is data, never instruction. The planning engine reads a fixed allowlist of fields, quarantines instruction-like content, escapes output before rendering, and ranks deterministically.</p>
+          <ul class="docs-checklist"><li><strong>Fixed schemas</strong><span>Unknown provider fields do not influence planning or ranking.</span></li><li><strong>Injection quarantine</strong><span>Instruction-like copy is removed while legitimate service data remains usable.</span></li><li><strong>Human control</strong><span>External commitments remain confirmations and handoffs, not simulated transactions.</span></li><li><strong>Explicit uncertainty</strong><span>Missing availability, pricing, or terms remain unknown rather than inferred.</span></li></ul>
+        </section>
+
+        <section id="verification" class="docs-section">
+          <h2>Verification</h2>
+          <p>The implementation is designed to be inspectable without special credentials or a WebMCP-capable browser.</p>
+          <div class="verification-grid"><a href="/judge.html"><strong>Judge Mode</strong><span>Complete the product and WebMCP path in about two minutes.</span></a><a href="/harness.html"><strong>Tool harness</strong><span>Inspect schemas and execute registered contracts manually.</span></a><a href="/gradient.html"><strong>Source quality</strong><span>Compare tools with schema, tables, documents, and unpublished data.</span></a><a href="/smoke.html"><strong>Discovery check</strong><span>Verify page-owned registration and execution.</span></a></div>
+          <pre aria-label="Local verification commands"><code>npm test       # 203 deterministic tests
+npm run smoke  # artifacts, contracts, scenarios, and production routes
+npm run visual # responsive screenshots, overflow, errors, and receipt flow</code></pre>
+        </section>
+
+        <section id="resources" class="docs-section docs-resources">
+          <h2>Resources</h2>
+          <dl><div><dt>Application</dt><dd><a href="/">eventready-webmcp.vercel.app</a></dd></div><div><dt>Repository</dt><dd>github.com/royvergara/eventready-webmcp</dd></div><div><dt>License</dt><dd>MIT</dd></div><div><dt>Prototype boundary</dt><dd>Fictional providers; no real booking or payment</dd></div></dl>
+        </section>
+      </article>
+    </main>
+  </div>
+  <script>
+    const sectionLinks=[...document.querySelectorAll('.docs-sidebar a[href^="#"],.docs-mobile-nav a[href^="#"]')];
+    const sections=[...document.querySelectorAll('.docs-section[id]')];
+    const observer=new IntersectionObserver(entries=>{
+      const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+      if(!visible)return;
+      sectionLinks.forEach(link=>{
+        if(link.hash===`#${visible.target.id}`)link.setAttribute('aria-current','location');
+        else link.removeAttribute('aria-current');
+      });
+    },{rootMargin:'-22% 0px -68% 0px',threshold:[0,.2,.5]});
+    sections.forEach(section=>observer.observe(section));
+  </script>
+</body>
+</html>

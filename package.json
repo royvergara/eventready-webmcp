@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "node --test engine/*.test.mjs",
-    "dev": "python3 -m http.server 8080"
+    "smoke": "node scripts/submission-smoke.mjs",
+    "dev": "python3 -m http.server 8080",
+    "visual": "node scripts/visual-check.mjs",
+    "screenshots": "node scripts/capture-submission.mjs"
   }
 }

@@ -28,8 +28,8 @@
   ],
   "rules_acknowledged": true,
   "learning": {
-    "status": "active",
-    "current_step": "complete",
+    "status": "completed",
+    "current_step": "build",
     "completed_steps": [
       "onboard",
       "scope",
