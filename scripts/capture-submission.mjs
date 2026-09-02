@@ -16,6 +16,7 @@ page.on('console',message=>{if(message.type()==='error')errors.push(message.text
 page.on('pageerror',error=>errors.push(error.message));
 
 async function shot(name,{fullPage=true}={}) {
+  await page.evaluate(()=>document.activeElement instanceof HTMLElement && document.activeElement.blur());
   await page.screenshot({path:new URL(name,out).pathname,fullPage});
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
   if (overflow>1) throw new Error(`${name}: ${overflow}px horizontal overflow`);

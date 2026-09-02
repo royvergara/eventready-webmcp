@@ -99,11 +99,43 @@ function showToast(message) {
   toastTimer=setTimeout(()=>{toast.classList.remove('visible');setTimeout(()=>toast.hidden=true,180);},3200);
 }
 
-function recordImpact(message, actor='You', channel='Interface') {
+function recordImpact(message, actor='You', channel='Interface', details=[]) {
   const at=new Date().toISOString();
-  eventOps.lastImpact={message,at};
-  eventOps.activity=[{message,actor,channel,at},...(eventOps.activity||[])].slice(0,12);
+  eventOps.lastImpact={message,at,details};
+  eventOps.activity=[{message,actor,channel,at,details},...(eventOps.activity||[])].slice(0,12);
   showToast(message);
+}
+
+function planMetrics(state) {
+  const option=state.options?.find(row=>row.id===state.selectedOptionId) || state.options?.[0];
+  const unresolved=state.readiness.responsibilities.filter(row=>row.status==='unresolved');
+  return {
+    cost:Number(option?.subtotal||0),
+    blockers:state.readiness.blockers.length,
+    unowned:unresolved.length,
+    covered:state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved.length,
+    total:state.readiness.responsibilities.length,
+    serviceLevel:state.serviceLevel,
+    headcount:state.brief.headcount,
+    budget:state.brief.budget,
+    dietary:{...(state.brief.dietary||{})},
+    state:state.readiness.state
+  };
+}
+
+function impactDetails(beforeState,afterState) {
+  const before=planMetrics(beforeState),after=planMetrics(afterState);
+  const details=[];
+  if(before.cost!==after.cost) details.push(`${after.cost>before.cost?'+':'−'}$${Math.abs(after.cost-before.cost).toLocaleString()} estimated package`);
+  if(before.unowned!==after.unowned) details.push(`${Math.abs(after.unowned-before.unowned)} ${after.unowned<before.unowned?'fewer':'more'} unowned responsibilities`);
+  if(before.blockers!==after.blockers) details.push(`${Math.abs(after.blockers-before.blockers)} ${after.blockers<before.blockers?'fewer':'more'} blockers`);
+  if(before.covered!==after.covered) details.push(`${after.covered}/${after.total} responsibilities covered`);
+  if(before.headcount!==after.headcount) details.push(`Guest count ${before.headcount} → ${after.headcount}`);
+  if(before.budget!==after.budget) details.push(`Budget $${Number(before.budget).toLocaleString()} → $${Number(after.budget).toLocaleString()}`);
+  const changedNeeds=Object.keys({...before.dietary,...after.dietary}).filter(key=>before.dietary[key]!==after.dietary[key]);
+  if(changedNeeds.length) details.push(changedNeeds.map(key=>`${label(key)} ${before.dietary[key]||0} → ${after.dietary[key]||0}`).join(' · '));
+  if(before.state!==after.state) details.push(`Planning status ${label(before.state)} → ${label(after.state)}`);
+  return details.slice(0,4);
 }
 
 function openOverlay(id, opener=document.activeElement) {
@@ -372,6 +404,18 @@ function eventMark(title) {
   return words.slice(0,2).map(word => word[0]).join('').toUpperCase();
 }
 
+function renderEventBriefing(state) {
+  const operating=operationalState(state);
+  const unresolved=state.readiness.responsibilities.filter(row=>row.status==='unresolved').length;
+  const committed=currentBooking(state);
+  const confirmations=Object.values(eventOps.confirmation).filter(Boolean).length;
+  const nextRisk=state.readiness.blockers[0]?.message || (unresolved?`${unresolved} responsibilities still need an owner`:operating.status==='confirmations'?`${5-confirmations} external confirmations remain`:'No critical risks remain');
+  $('eventBriefing').innerHTML=`<div class="briefing-main"><span>AT A GLANCE</span><strong>${operating.status==='ready'?'This event is ready to run':state.readiness.state==='ready'?'The operating plan is complete':'The plan still needs decisions'}</strong><p>${state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved}/${state.readiness.responsibilities.length} responsibilities covered · ${state.readiness.blockers.length} blockers · ${unresolved} unowned</p></div><dl><div><dt>Working plan</dt><dd>${committed?`$${Number(committed.total||committed.subtotal).toLocaleString()} selected`:'Not selected'}</dd></div><div><dt>External checks</dt><dd>${confirmations}/5 recorded</dd></div><div><dt>Highest priority</dt><dd>${esc(nextRisk)}</dd></div></dl><div class="briefing-actions"><button class="quiet-button" data-copy-brief>Copy event brief</button>${currentEventId==='sample-wedding'?'<button class="quiet-button" data-toggle-agent-guide>Try with an agent</button>':''}</div>`;
+  const guide=$('sampleAgentGuide');
+  guide.hidden=currentEventId!=='sample-wedding' || guide.dataset.open!=='true';
+  if(currentEventId==='sample-wedding') guide.innerHTML=`<div><strong>Try the shared plan with an agent</strong><p>Copy the tested prompt, send it in ChatGPT, and watch every WebMCP change appear here with a visible receipt.</p></div><pre>Reset the EventReady demo. Select the recommended event plan, change it to staffed service, assign every unresolved responsibility to Roy as organizer, then give me the readiness report and run-of-show.</pre><div class="agent-guide-actions"><button class="primary-button" data-copy-agent-prompt>Copy demo prompt</button><button class="quiet-button" data-reset-sample>Reset sample</button></div><div class="scenario-lab"><span>STRESS-TEST THE PLAN</span><p>See how a real change recalculates cost, coverage, and readiness.</p><div><button class="quiet-button" data-scenario="guests">Increase to 220 guests</button><button class="quiet-button" data-scenario="budget">Reduce budget to $5,000</button></div></div>`;
+}
+
 function renderWorkspace(state = session.snapshot()) {
   const status = phaseState(state);
   const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved');
@@ -384,6 +428,7 @@ function renderWorkspace(state = session.snapshot()) {
   const operating=operationalState(state);
   $('eventHealth').textContent = operating.status === 'ready' ? 'Ready to run' : operating.status === 'confirmations' ? 'Confirmations pending' : `${openCount} decision${openCount===1?'':'s'} remaining`;
   $('eventCountdown').textContent = `${days} days to go`;
+  renderEventBriefing(state);
   document.querySelectorAll('[data-phase]').forEach(button => {
     const phase = button.dataset.phase;
     const active=phase === appState.activePhase;
@@ -407,7 +452,7 @@ function renderActivity() {
   const target=$('planActivity');
   if (!target) return;
   const entries=eventOps.activity||[];
-  target.innerHTML=`<header><div><h2 id="planActivityTitle">Shared plan activity</h2><p>Human and agent changes leave the same visible receipt.</p></div><span>${entries.length} recorded</span></header>${entries.length?`<ol>${entries.slice(0,6).map(entry=>`<li><div><strong>${esc(entry.message)}</strong><span>${esc(entry.actor)} · ${esc(entry.channel)}</span></div><time datetime="${esc(entry.at)}">${new Date(entry.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</time></li>`).join('')}</ol>`:'<p class="activity-empty">Changes made in the interface or through a WebMCP Action will appear here.</p>'}`;
+  target.innerHTML=`<header><div><h2 id="planActivityTitle">Decision history</h2><p>Every human and agent change explains its effect on the same plan.</p></div><span>${entries.length} recorded</span></header>${entries.length?`<ol>${entries.slice(0,8).map(entry=>`<li><div><strong>${esc(entry.message)}</strong>${entry.details?.length?`<div class="activity-impact">${entry.details.map(detail=>`<b>${esc(detail)}</b>`).join('')}</div>`:''}<span>${esc(entry.actor)} · ${esc(entry.channel)}</span></div><time datetime="${esc(entry.at)}">${new Date(entry.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</time></li>`).join('')}</ol>`:'<p class="activity-empty">Changes made in the interface or through a WebMCP Action will appear here.</p>'}`;
 }
 
 function phaseHeader(kicker,title,description,done,labelText='Complete') {
@@ -441,7 +486,9 @@ function renderSourcePhase(state) {
     const coverage=option.uncovered?.length ? `${option.uncovered.length} guest need${option.uncovered.length===1?'':'s'} uncovered` : 'All recorded guest needs covered';
     const cheapest=option.subtotal===Math.min(...state.options.map(row=>row.subtotal));
     const fit=option.recommended?'Best operational fit':cheapest?'Lowest estimated cost':option.blockers===Math.min(...state.options.map(row=>row.blockers))?'Lowest coordination burden':'Alternative approach';
-    return `<article class="provider-card ${option.recommended?'recommended':''}"><span class="provider-rank">${String(index+1).padStart(2,'0')}</span><div><span class="fit-label">${fit}</span><h3>${esc(providerNames.join(' + ') || option.label || `Service plan ${index+1}`)}</h3><p>${esc(option.summary || 'Provider plan')}</p><div class="provider-facts"><span>${esc(coverage)}</span><span>${option.itemCount || option.items?.length || 0} package lines</span><span>${option.blockers || 0} blockers remain</span><span>${esc(state.serviceLevel.replaceAll('_',' '))}</span></div></div><aside><small>ESTIMATED PACKAGE</small><strong>$${Number(option.subtotal).toLocaleString()}</strong><button class="primary-button" data-open-package="${esc(option.id)}">${committed?.optionId===option.id?'View working package':'Explore package'}</button></aside></article>`;
+    const cheapestCost=Math.min(...state.options.map(row=>row.subtotal));
+    const premium=option.subtotal-cheapestCost;
+    return `<article class="provider-card ${option.recommended?'recommended':''}"><span class="provider-rank">${String(index+1).padStart(2,'0')}</span><div><span class="fit-label">${fit}</span><h3>${esc(providerNames.join(' + ') || option.label || `Service plan ${index+1}`)}</h3><p>${esc(option.summary || 'Provider plan')}</p><div class="provider-facts"><span>${esc(coverage)}</span><span>${option.itemCount || option.items?.length || 0} package lines</span><span>${option.blockers || 0} blockers remain</span><span>${esc(state.serviceLevel.replaceAll('_',' '))}</span></div>${option.recommended?`<details class="recommendation-proof"><summary>Why this plan ranks first</summary><dl><div><dt>Coverage</dt><dd>${esc(coverage)}</dd></div><div><dt>Coordination</dt><dd>${option.blockers||0} blockers and ${option.vendorCount||providerNames.length} provider handoff${(option.vendorCount||providerNames.length)===1?'':'s'}</dd></div><div><dt>Tradeoff</dt><dd>${premium>0?`$${premium.toLocaleString()} above the lowest-cost option`:'Lowest estimated cost'}</dd></div><div><dt>Evidence</dt><dd>Structured sample provider capabilities; availability and final terms remain unverified</dd></div></dl></details>`:''}</div><aside><small>ESTIMATED PACKAGE</small><strong>$${Number(option.subtotal).toLocaleString()}</strong><button class="primary-button" data-open-package="${esc(option.id)}">${committed?.optionId===option.id?'View working package':'Explore package'}</button></aside></article>`;
   }).join('');
   document.querySelector('[data-phase-view="source"]').innerHTML = `${phaseHeader('PHASE 2','Find the services that complete the plan',`Ranked for ${label(priority)}. Compare coverage, cost, and the operational work each option leaves behind.`,!!committed)}${nextAction(committed?'Coordinate the work this plan leaves behind':'Review the strongest operational fit',committed?'Continue to Coordinate':'Review best fit',committed?'data-phase-jump="coordinate"':`data-open-package="${esc(orderedOptions[0]?.id || '')}"`)}
     <article class="service-brief"><div><span class="kicker">CURRENT REQUIREMENT</span><h3>Reception service for ${state.brief.headcount} guests</h3><p>Must cover recorded dietary needs and fit ${esc(state.brief.venueName)}’s operating requirements.</p></div><span class="sample-label">FICTIONAL SAMPLE PROVIDERS</span></article>
@@ -582,7 +629,9 @@ function renderPreparePhase(state) {
   const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved');
   const operating=operationalState(state);
   const open = [...state.readiness.blockers.map(item=>({type:'Blocker',title:item.message||item.kind||'Coverage issue',detail:item.detail||'Requires a plan change'})),...unresolved.map(row=>({type:'Unowned',title:label(row.resource),detail:`${row.when||'Timing to confirm'} · ${row.evidence}`}))];
+  const confirmations=Object.values(eventOps.confirmation).filter(Boolean).length;
   document.querySelector('[data-phase-view="prepare"]').innerHTML = `${phaseHeader('EVENT PREFLIGHT',operating.status==='ready'?'Cleared for event day':operating.status==='confirmations'?'The plan is complete. Confirm the real-world handoffs.':'Close the gaps before they become surprises','A plan is only ready when its coverage, people, provider, timing, and critical confirmations agree.',operating.status==='ready','Cleared')}${nextAction(open.length?'Resolve the highest-impact blocker':operating.status==='confirmations'?'Complete the critical confirmations':'Open the operational run plan',open.length?(state.serviceLevel==='pickup'?'Review delivery':'Open Coordinate'):operating.status==='confirmations'?'Review confirmations':'Open Run',open.length?(state.serviceLevel==='pickup'?'data-review-delivery':'data-phase-jump="coordinate"'):operating.status==='confirmations'?'data-scroll-confirmations':'data-phase-jump="run"')}
+    <section class="readiness-transition ${operating.status}"><div><span>${state.readiness.state==='ready'?'✓':'1'}</span><strong>Operating plan</strong><small>${state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved.length}/${state.readiness.responsibilities.length} covered · ${state.readiness.blockers.length} blockers · ${unresolved.length} unowned</small></div><i></i><div><span>${operating.status==='ready'?'✓':'2'}</span><strong>External verification</strong><small>${confirmations}/5 critical facts recorded</small></div><i></i><div><span>${operating.status==='ready'?'✓':'3'}</span><strong>Ready to run</strong><small>${operating.status==='ready'?'Shareable operating plan':'Unlocks when both stages agree'}</small></div></section>
     <div class="readiness-matrix">${operating.areas.map(area=>`<article class="${area.status}"><span>${area.status==='ready'?'✓':area.status==='blocked'?'!':'○'}</span><div><strong>${esc(area.label)}</strong><small>${esc(area.detail)}</small></div><b>${esc(area.status==='ready'?'Ready':area.status==='blocked'?'Blocked':'Confirm')}</b></article>`).join('')}</div>
     <section class="confirmation-panel" id="confirmationPanel"><header><div><span class="kicker">CRITICAL CONFIRMATIONS</span><h3>What must be true outside EventReady</h3><p>These demo checks record verification; they do not contact a provider or process payment.</p></div></header><div class="confirmation-list">${[['provider','Provider confirms availability'],['terms','Final price and contract terms reviewed'],['deposit','Required deposit recorded'],['finalCount','Final guest count confirmed'],['venueAccess','Venue access and on-site contact confirmed']].map(([key,text])=>`<label><input type="checkbox" data-confirmation="${key}" ${eventOps.confirmation[key]?'checked':''}><span><strong>${text}</strong><small>${eventOps.confirmation[key]?'Recorded for this demo plan':'Still needs confirmation'}</small></span></label>`).join('')}</div></section>
     <div class="readiness-grid"><article class="readiness-card"><span>Coverage</span><strong>${state.readiness.counts?.covered ?? state.readiness.responsibilities.filter(row=>row.status!=='unresolved').length}</strong></article><article class="readiness-card"><span>Blockers</span><strong>${state.readiness.blockers.length}</strong></article><article class="readiness-card"><span>Unowned work</span><strong>${unresolved.length}</strong></article></div>
@@ -719,7 +768,12 @@ function bindDynamicActions() {
   if ($('venueCost')) $('venueCost').onchange=()=>{eventOps.ledger.venue=Math.max(0,Number($('venueCost').value)||0);persist();renderWorkspace(session.snapshot());};
   if ($('depositPaid')) $('depositPaid').onchange=()=>{eventOps.ledger.depositPaid=$('depositPaid').checked;eventOps.confirmation.deposit=$('depositPaid').checked;persist();renderWorkspace(session.snapshot());};
   document.querySelectorAll('[data-copy-run]').forEach(button => button.onclick = copyRun);
+  document.querySelectorAll('[data-copy-brief]').forEach(button => button.onclick = copyEventBrief);
   document.querySelectorAll('[data-print-run]').forEach(button => button.onclick = () => window.print());
+  document.querySelectorAll('[data-toggle-agent-guide]').forEach(button=>button.onclick=()=>{const guide=$('sampleAgentGuide');guide.dataset.open=guide.dataset.open==='true'?'false':'true';renderWorkspace(session.snapshot());if(guide.dataset.open==='true')guide.scrollIntoView({behavior:'smooth',block:'center'});});
+  document.querySelectorAll('[data-copy-agent-prompt]').forEach(button=>button.onclick=()=>copyText('Reset the EventReady demo. Select the recommended event plan, change it to staffed service, assign every unresolved responsibility to Roy as organizer, then give me the readiness report and run-of-show.','Copy the EventReady demo prompt:'));
+  document.querySelectorAll('[data-reset-sample]').forEach(button=>button.onclick=resetSample);
+  document.querySelectorAll('[data-scenario]').forEach(button=>button.onclick=()=>applyScenario(button.dataset.scenario));
   document.querySelectorAll('[data-copy-provider-request]').forEach(button => button.onclick = () => copyText(`Hello — I’m planning ${session.brief.title} for ${session.brief.headcount} guests on ${formatDate(session.brief.serve_at)}. Please confirm availability, final pricing, inclusions, contract terms, and deposit requirements.`,'Copy this provider request:'));
   document.querySelectorAll('[data-copy-payment-checklist]').forEach(button => button.onclick = () => copyText(`Payment checklist for ${session.brief.title}\n• Confirm final provider price and cancellation terms\n• Verify payee and secure checkout URL\n• Record deposit amount and due date\n• Save receipt and remaining balance date\n• Do not mark paid until the provider confirms`,'Copy this payment checklist:'));
 }
@@ -734,6 +788,55 @@ async function copyRun() {
   try { await navigator.clipboard.writeText(text); } catch { window.prompt('Copy the run plan:',text); }
 }
 
+async function copyEventBrief() {
+  const state=session.snapshot();
+  const operating=operationalState(state);
+  const committed=currentBooking(state);
+  const unresolved=state.readiness.responsibilities.filter(row=>row.status==='unresolved');
+  const text=[
+    `${state.brief.title} — EVENTREADY BRIEF`,
+    `${formatDate(state.brief.serveAt)} · ${state.brief.venueName}`,
+    `${state.brief.headcount} guests · $${Number(state.brief.budget).toLocaleString()} working budget`,
+    `Status: ${operating.status==='ready'?'Ready to run':operating.status==='confirmations'?'Operating plan complete; external confirmations pending':'Needs decisions'}`,
+    `Working plan: ${committed?`${committed.label} · $${Number(committed.total||committed.subtotal).toLocaleString()}`:'Not selected'}`,
+    `Coverage: ${state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved.length}/${state.readiness.responsibilities.length} responsibilities · ${state.readiness.blockers.length} blockers · ${unresolved.length} unowned`,
+    `External confirmations: ${Object.values(eventOps.confirmation).filter(Boolean).length}/5`,
+    '',
+    'Open work:',
+    ...(unresolved.length?unresolved.map(row=>`• ${label(row.resource)} — ${row.when||'Timing to confirm'}`):['• None'])
+  ].join('\n');
+  await copyText(text,'Copy the event brief:');
+  showToast('Event brief copied.');
+}
+
+function resetSample() {
+  currentEventId='sample-wedding';
+  booking=null;
+  eventOps=createEventOps();
+  session.reset(false);
+  session.assess();
+  persist();
+  appState.activePhase=firstIncompletePhase(session.snapshot());
+  renderWorkspace(session.snapshot());
+  showToast('Sample restored to its starting state.');
+}
+
+function applyScenario(kind) {
+  const before=session.snapshot();
+  const patch=kind==='guests'?{headcount:220}:{budget:5000};
+  session.assess(patch);
+  const after=session.snapshot();
+  if(booking) {
+    const option=after.options.find(row=>row.id===after.selectedOptionId)||after.options[0];
+    booking={...booking,optionId:option?.id||booking.optionId,subtotal:option?.subtotal||booking.subtotal,total:option?.subtotal||booking.total};
+  }
+  if(kind==='guests') eventOps.confirmation.finalCount=false;
+  const message=kind==='guests'?`Guest count increased to ${after.brief.headcount}.`:`Working budget reduced to $${Number(after.brief.budget).toLocaleString()}.`;
+  recordImpact(message,'You','Scenario check',impactDetails(before,after));
+  persist();
+  renderWorkspace(after);
+}
+
 function resetApplication() {
   currentEventId=null; session.reset(false); session.assess(); booking=null; eventOps=createEventOps();
   localStorage.removeItem(STATE_KEY); localStorage.removeItem(BOOKING_KEY);
@@ -744,7 +847,7 @@ $('startForm').addEventListener('submit',event => { event.preventDefault(); cons
 $('closeBriefReview').onclick=$('editBriefDescription').onclick=()=>{closeOverlay('briefReviewOverlay',{restoreFocus:false});appState.pendingBrief=null;$('startBrief').focus();};
 $('confirmBriefReview').onclick=confirmBriefReview;
 document.querySelectorAll('[data-start-brief]').forEach(button => button.onclick=()=>{ document.querySelectorAll('[data-start-brief]').forEach(item=>item.setAttribute('aria-pressed','false')); button.setAttribute('aria-pressed','true'); $('startBrief').value=button.dataset.startBrief; $('startBrief').focus(); });
-$('sampleWedding').onclick=()=>{ currentEventId='sample-wedding'; booking=null; eventOps=createEventOps(); session.brief={...demo}; session.assess(); persist(); appState.activePhase=firstIncompletePhase(session.snapshot()); renderWorkspace(session.snapshot()); showRoute('workspace'); };
+$('sampleWedding').onclick=()=>{resetSample();showRoute('workspace');};
 $('newEventButton').onclick=resetApplication; $('backToEvents').onclick=()=>showRoute('start'); $('backToStart').onclick=()=>showRoute('start');
 $('shapePrevious').onclick=()=>{appState.shapeStep=Math.max(0,appState.shapeStep-1);renderShape();};
 $('shapeNext').onclick=()=>{updateBriefFromFields();appState.shapeStep=Math.min(4,appState.shapeStep+1);renderShape();};
@@ -785,6 +888,7 @@ session.subscribe(snapshot => { if(appState.route==='workspace') renderWorkspace
 
 for (const tool of buildEventReadyTools(session,() => {})) {
   toolHost().registerTool({ ...tool, execute:async input => {
+    const before=session.snapshot();
     const result = tool.run(input || {});
     if (tool.name === 'reset_demo_event') {
       booking = null;
@@ -820,7 +924,7 @@ for (const tool of buildEventReadyTools(session,() => {})) {
     }
     if (!['get_event_brief','get_readiness_report','get_run_of_show'].includes(tool.name)) {
       const summary=session.snapshot().delta?.lines?.[0] || `${label(tool.name)} updated the plan.`;
-      recordImpact(summary,'EventReady agent',tool.name);
+      recordImpact(summary,'EventReady agent',tool.name,impactDetails(before,session.snapshot()));
     }
     persist();
     if (appState.route !== 'workspace') showRoute('workspace');

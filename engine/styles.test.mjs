@@ -24,7 +24,7 @@ test('the create-another-event action only appears inside a workspace', () => {
   assert.match(html, /id="newEventButton"[^>]*hidden[^>]*>Create another event/);
   assert.match(ui, /newEventButton'\)\.hidden = route !== 'workspace'/);
   assert.match(html, /id="planActivity"[^>]*aria-labelledby="planActivityTitle"/);
-  assert.match(ui, /recordImpact\(message, actor='You', channel='Interface'\)/);
+  assert.match(ui, /recordImpact\(message, actor='You', channel='Interface', details=\[\]\)/);
   assert.match(ui, /'EventReady agent',tool\.name/);
   assert.match(ui, /tool\.name === 'select_event_plan'[\s\S]*booking=\{/,
     'an agent plan selection must create the same visible working-plan record as the interface');

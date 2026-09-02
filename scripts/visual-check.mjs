@@ -12,6 +12,8 @@ const cases = [
   { name:'home-desktop', path:'/', width:1440, height:1000 },
   { name:'home-mobile', path:'/', width:390, height:844 },
   { name:'workspace-mobile', path:'/?view=event', width:390, height:844, exerciseActivity:true },
+  { name:'workspace-guide-desktop', path:'/', width:1440, height:1000, exerciseGuide:true },
+  { name:'workspace-guide-mobile', path:'/', width:390, height:844, exerciseGuide:true },
   { name:'judge-desktop', path:'/judge.html', width:1440, height:1000 },
   { name:'judge-mobile', path:'/judge.html', width:390, height:844 },
   { name:'about-desktop', path:'/developers.html', width:1440, height:1000 },
@@ -33,15 +35,22 @@ for (const item of cases) {
     await page.locator('#reviewPackage').click();
     await page.locator('#applyProposal').click();
   }
+  if (item.exerciseGuide) {
+    await page.locator('#sampleWedding').click();
+    await page.locator('[data-toggle-agent-guide]').click();
+    await page.locator('[data-scenario="guests"]').click();
+  }
   const health = await page.evaluate(() => ({
     title:document.title,
     content:document.body.innerText.trim().length,
     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
     overlay:!!document.querySelector('[data-nextjs-dialog],.vite-error-overlay,#webpack-dev-server-client-overlay'),
-    activity:document.querySelectorAll('#planActivity li').length
+    activity:document.querySelectorAll('#planActivity li').length,
+    guide:!document.querySelector('#sampleAgentGuide')?.hidden
   }));
+  await page.evaluate(()=>document.activeElement instanceof HTMLElement && document.activeElement.blur());
   await page.screenshot({ path:new URL(`${item.name}.png`,out).pathname, fullPage:true });
-  const ok=!!response?.ok() && health.content>100 && health.overflow<=1 && !health.overlay && errors.length===0 && (!item.exerciseActivity || health.activity>0);
+  const ok=!!response?.ok() && health.content>100 && health.overflow<=1 && !health.overlay && errors.length===0 && (!item.exerciseActivity || health.activity>0) && (!item.exerciseGuide || (health.guide && health.activity>0));
   console.log(`${ok?'PASS':'FAIL'} ${item.name} · ${response?.status()||'no response'} · overflow ${health.overflow}px · ${errors.length} errors${item.exerciseActivity?` · ${health.activity} receipt${health.activity===1?'':'s'}`:''}`);
   if (!ok) { failed=true; if(errors.length) console.log(errors.join('\n')); }
   await page.close();

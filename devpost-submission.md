@@ -20,7 +20,7 @@ Event failure usually happens in the seams between otherwise valid purchases. Ev
 
 ## How We Used AI
 
-The product is designed for agent-human collaboration. An agent can read the brief, assess multiple provider contracts, retrieve the readiness report, select a plan, change a service level, confirm an assumption, and generate the run-of-show. The human retains the decisions that create commitments: selecting tradeoffs, confirming inferred values, and assigning responsibility. Tool calls update the same EventSession rendered on screen, and meaningful interface and WebMCP mutations leave a shared-plan activity receipt naming the actor and channel. Provider content remains untrusted data: injection-like instructions are quarantined, unknown fields do not influence ranking, and external text is escaped before rendering.
+The product is designed for agent-human collaboration. An agent can read the brief, assess multiple provider contracts, retrieve the readiness report, select a plan, change a service level, confirm an assumption, and generate the run-of-show. The human retains the decisions that create commitments and verify external facts. Tool calls update the same EventSession rendered on screen, and meaningful mutations leave a decision receipt naming the actor and channel while explaining before/after cost, coverage, ownership, and readiness effects. Provider content remains untrusted data: injection-like instructions are quarantined, unknown fields do not influence ranking, and external text is escaped before rendering.
 
 ## How We Used Codex
 
@@ -32,6 +32,10 @@ Codex was used to audit the original catering prototype against the judging crit
 - Explicit ownership for every provider-to-human operational seam.
 - Multiple plan alternatives with concrete cost and coverage tradeoffs.
 - Changed-only feedback when service level, plan, assumptions, or ownership changes.
+- Live stress tests that recalculate the plan when attendance or budget changes.
+- Explainable recommendations with coverage, coordination, price-tradeoff, and provenance evidence.
+- Two-stage readiness that separates computed operating completeness from human-verified external facts.
+- Copyable event brief and chronological run-of-show for real team handoffs.
 - Draft/Ready run-of-show with time, action, owner, and evidence on every row.
 - Eight outcome-oriented WebMCP tools backed by the visible EventSession, plus one clearly separated demo-reset utility.
 - Inspectable shared-plan receipts that distinguish interface changes from WebMCP Actions.
@@ -67,7 +71,7 @@ https://github.com/royvergara/eventready-webmcp
 
 **TODO: record and add a public YouTube URL (required, under 3 minutes, with audio).**
 
-The complete timed narration, exact click order, native-WebMCP prompt, preflight, fallback, and claims checklist are in [`docs/demo-script.md`](docs/demo-script.md). The target cut is 2:35–2:45 and demonstrates a real agent mutation path rather than a purely narrated interface tour.
+The complete timed narration, exact click order, native-WebMCP prompt, preflight, fallback, and claims checklist are in [`docs/demo-script.md`](docs/demo-script.md). The target cut is 2:45–2:55 and demonstrates live replanning and a real agent mutation path rather than a purely narrated interface tour.
 
 ## Screenshot Shot List
 

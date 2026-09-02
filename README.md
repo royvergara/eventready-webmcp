@@ -15,6 +15,8 @@ Anonymous events are saved independently on the current device and can be resume
 3. Apply the commitment, assign the remaining work in Coordinate, and resolve the delivery blocker in Prepare.
 4. The same event moves from Needs attention to Ready and produces a shareable run-of-show in Run.
 
+The sample workspace also includes a tested agent prompt and two stress tests. Increasing attendance or tightening the budget recalculates the plan and records the resulting cost, coverage, and readiness effects in Decision history.
+
 [Developer details](https://eventready-webmcp.vercel.app/developers.html) explains WebMCP separately from the consumer product. [Judge Mode](https://eventready-webmcp.vercel.app/judge.html) provides the fast verification path.
 
 ## Why WebMCP
@@ -25,7 +27,7 @@ No single vendor can determine whether a multi-party event is ready. EventReady 
 - `select_event_plan`, `change_service_level`, `assign_responsibility`
 - `confirm_event_assumption`, `get_run_of_show`, `reset_demo_event`
 
-Mutating tool calls update the same `EventSession` the visible interface renders. Tools advise and recalculate; they do not transact or silently accept responsibility.
+Mutating tool calls update the same `EventSession` the visible interface renders. Structured decision receipts show before/after cost, coverage, ownership, and readiness effects. Tools advise and recalculate; they do not transact or silently accept responsibility.
 
 The supporting source-gradient demo proves the implementation can distinguish WebMCP tools from schema.org, a price table, a document transcript, and no published data. Provider text crosses a strict trust boundary: fixed fields only, injection-like instructions quarantined, output escaped, and ranking unaffected.
 
@@ -35,6 +37,7 @@ The supporting source-gradient demo proves the implementation can distinguish We
 - The eight providers and Cedar House are fictional reference contracts, not real businesses.
 - No payments, bookings, messages, or holds are placed.
 - Provider confirmation and payment are explicit handoffs: the app can copy the required request/checklist but never marks an external action complete.
+- Recommendations expose their coverage, coordination burden, price tradeoff, and evidence source; planners can copy a current operating brief or run-of-show.
 - Every asset is local to the deployment; no framework or third-party runtime is required.
 
 ## Verify locally

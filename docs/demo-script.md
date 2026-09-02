@@ -1,6 +1,6 @@
 # EventReady recording runbook
 
-Target: **2:35–2:45**, one continuous take, public or unlisted YouTube, narration on.
+Target: **2:45–2:55**, one continuous take, public or unlisted YouTube, narration on.
 
 The shortest credible story is: describe the event → compare a complete plan → let an agent coordinate it → verify it is ready → show the technical proof.
 
@@ -36,7 +36,7 @@ The shortest credible story is: describe the event → compare a complete plan �
 
 “A planner starts in ordinary language. EventReady turns that description into visible requirements and assumptions, so the person can correct the facts before the system recommends anything.”
 
-### 0:38–1:03 — Show requirements-first discovery
+### 0:38–0:58 — Show requirements-first discovery
 
 **On screen:** Open Source. Scroll just enough to show the ranked plans, then open the recommended package. Show the included items and one quantity control or Swap action; do not complete a long edit.
 
@@ -44,7 +44,15 @@ The shortest credible story is: describe the event → compare a complete plan �
 
 “Source compares complete service plans instead of ranking vendors by price alone. Each option shows coverage, cost, package contents, and the work it leaves behind. The basket is a starting point: quantities, items, providers, and service level can all be refined.”
 
-### 1:03–1:38 — Demonstrate WebMCP doing real work
+### 0:58–1:13 — Prove that the plan responds to reality
+
+**On screen:** Open “Try with an agent,” choose “Increase to 220 guests,” and show the updated estimate and Decision history receipt. Reset the sample immediately afterward.
+
+**Say:**
+
+“This is a live planning model, not a fixed checklist. When attendance changes, EventReady recalculates package cost and records exactly what moved, who changed it, and why the event may need attention again.”
+
+### 1:13–1:46 — Demonstrate WebMCP doing real work
 
 **On screen:** Return to ChatGPT and send the prepared prompt. Keep the tool calls visible as they run. Then return to EventReady.
 
@@ -54,7 +62,7 @@ The shortest credible story is: describe the event → compare a complete plan �
 
 If the agent pauses for confirmation, approve only the proposed in-app planning changes. EventReady never contacts a provider or processes a payment.
 
-### 1:38–2:07 — Prove the human-agent handoff
+### 1:46–2:15 — Prove the human-agent handoff
 
 **On screen:** In EventReady, show the agent receipts and the planning report with no blockers or unowned work. Open Prepare and check the five critical confirmations, explaining that these represent verified demo facts. Show **Ready to run**.
 
@@ -62,7 +70,7 @@ If the agent pauses for confirmation, approve only the proposed in-app planning 
 
 “The interface now reflects the agent’s work: selected plan, service change, named ownership, readiness result, and agent receipts. The agent cannot invent external facts, so the person explicitly records provider, terms, deposit, guest-count, and venue confirmations before EventReady says Ready to run.”
 
-### 2:07–2:25 — Show the operational output
+### 2:15–2:33 — Show the operational output
 
 **On screen:** Open Run and show the chronological run-of-show with time, action, owner, and evidence.
 
@@ -70,7 +78,7 @@ If the agent pauses for confirmation, approve only the proposed in-app planning 
 
 “Once coverage and ownership agree, that same plan becomes a chronological run-of-show. The team can see what happens when, who owns it, and the evidence behind every handoff.”
 
-### 2:25–2:43 — Show implementation proof and close
+### 2:33–2:53 — Show implementation proof and close
 
 **On screen:** Open About, jump to WebMCP implementation or use Judge Mode. Show the nine-tool inventory and trust/verification summary. End on the EventReady wordmark.
 
@@ -85,10 +93,11 @@ Keep this beside the recording window:
 1. Home → wedding example.
 2. Confirm brief → open workspace.
 3. Source → recommended package → show basket controls → close.
-4. ChatGPT → paste the prepared prompt → wait for completion.
-5. EventReady → show activity receipts → Prepare → check five demo confirmations.
-6. Show Ready → Run → chronological plan.
-7. About or Judge Mode → show tool inventory → close on brand.
+4. Try with an agent → increase to 220 guests → show cost receipt → reset sample.
+5. ChatGPT → paste the prepared prompt → wait for completion.
+6. EventReady → show Decision history → Prepare → check five demo confirmations.
+7. Show Ready → Run → chronological plan.
+8. About or Judge Mode → show tool inventory → close on brand.
 
 ## If the agent is slow during recording
 
