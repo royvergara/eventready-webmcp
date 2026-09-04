@@ -31,6 +31,7 @@
      title 11 or 19, and the overview alone dropped 4.4rem before its eyebrow. */
   --lockup-eyebrow-gap:var(--space-3);
   --lockup-lede-gap:var(--space-4);
+  --lockup-status-gap:var(--space-5);
   --lockup-end-gap:var(--space-10);
 }
 
@@ -112,10 +113,6 @@
   letter-spacing:.14em;
   text-transform:uppercase;
 }
-/* where the eyebrow shares a ruled line with a count, the gap belongs to the
-   line and the eyebrow inside it sits flush */
-.docs-body .sheethead-band{margin:0 0 var(--lockup-eyebrow-gap);padding-bottom:var(--space-2)}
-.docs-body .sheethead-band .kicker{margin-bottom:0!important}
 .docs-intro,.harness-intro,.docs-body .sheethead,.judge-hero>div{padding-top:0}
 .docs-intro,.harness-intro,.docs-body .sheethead{margin-bottom:var(--lockup-end-gap)}
 .docs-intro h1,.harness-intro h1,.judge-hero h1,.docs-body .sheethead h1{margin:0 0 var(--lockup-lede-gap);font-family:var(--display);font-size:var(--type-title-1);font-weight:590;line-height:var(--leading-tight);letter-spacing:-.035em;max-width:none}
@@ -124,6 +121,15 @@
 .docs-section>p,.docs-lede,.harness-intro>p:last-child,.docs-body .lede{max-width:var(--content-measure);color:var(--color-text-muted);font-size:var(--type-body);line-height:var(--leading-body)}
 .docs-path,.harness-intro>p:first-child{font-size:var(--type-label)!important}
 .docs-lede,.harness-intro>p:last-child{font-size:var(--type-lede)!important}
+/* The page's own facts, under the lede. Four pages used to carry them above the
+   title instead, on a ruled band beside a sheet number — 02, 03, 05, with no 01
+   and no 04, left over from the docket this was before it was documentation. The
+   numbers never matched the order the sidebar lists these pages in. */
+.docs-status-line{display:flex;align-items:center;gap:var(--space-4);margin-top:var(--lockup-status-gap);padding-top:var(--space-4);border-top:1px solid var(--color-border);color:var(--color-text-soft)}
+.docs-status-line span{display:flex;align-items:center;gap:var(--space-2)}
+.docs-status-line i{width:.45rem;height:.45rem;border-radius:50%;background:var(--color-success)}
+.docs-status-line a{margin-left:auto;color:var(--color-brand);font-weight:var(--weight-strong);text-decoration:none}
+.docs-status-line a:hover{text-decoration:underline}
 .docs-status-line,.docs-summary dd,.architecture-flow span,.docs-steps li>span,.docs-steps p,.tool-table-head,.tool-kind,.docs-section pre{font-size:var(--type-label)}
 .architecture-flow strong,.architecture-flow>b,.docs-note strong,.docs-note p,.docs-steps strong,.tool-table code,.tool-table p,.docs-caption,.state-rules strong,.state-rules p,.docs-checklist strong,.docs-checklist span,.verification-grid strong,.verification-grid span,.docs-resources dt,.docs-resources dd{font-size:var(--type-caption)!important;line-height:1.55}
 
@@ -131,7 +137,7 @@
 .harness-output{top:calc(var(--docs-header-height) + var(--space-5))}
 .harness-tools,.harness-output,.docs-body .chit{border-color:var(--color-border);border-radius:var(--radius-md);background:var(--color-surface)}
 .harness-panel-head,.docs-body .chit-head{background:var(--color-surface-subtle)}
-.harness-panel-head>div>span,.harness-panel-head>span,.docs-body .toolsum-note,.docs-body .toolsum .btn,.harness-output .readout,.docs-body .kicker,.docs-body .sheethead-meta,.docs-body .chit-note{font-size:var(--type-label)}
+.harness-panel-head>div>span,.harness-panel-head>span,.docs-body .toolsum-note,.docs-body .toolsum .btn,.harness-output .readout,.docs-body .chit-note{font-size:var(--type-label)}
 .harness-panel-head h2{font-size:var(--type-body)}
 .harness-page-picker>span,.harness-page-picker .field,.docs-body .tool-name,.docs-body .toolbody>p,.docs-body .chit-title{font-size:var(--type-caption)!important;line-height:1.55}
 .docs-body .toolsum{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(7.5rem,auto) auto;align-items:center;column-gap:var(--space-3)}
