@@ -217,7 +217,7 @@ function renderSavedEvents() {
   if (!$('savedEventsList')) return;
   const events = Object.values(eventStore.events).filter(item=>item.id!=='sample-wedding').sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
   $('savedEventsSection').hidden = events.length === 0;
-  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue ${icon('arrow')}</span></button>`).join('');
+  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span class="card-go" aria-hidden="true">${icon('arrow')}</span></button>`).join('');
   document.querySelectorAll('[data-open-event]').forEach(button=>button.onclick=()=>restoreEvent(button.dataset.openEvent));
 }
 
