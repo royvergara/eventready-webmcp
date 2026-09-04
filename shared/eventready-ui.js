@@ -572,14 +572,12 @@ function renderWorkspace(state = session.snapshot()) {
       // A finished phase carries a check. The numeral only ever means "ahead of you".
       marker.innerHTML = status[phase] ? icon('check') : button.dataset.step;
     }
-    // The row says its own state. The description line is the only spare width
-    // in a 224px rail, and once you know a phase is done or current, what it is
-    // for matters less than where you stand in it.
+    // The same two words the phase header uses. A phase is complete or it is
+    // not; which one you happen to be looking at is navigation, not status,
+    // and the ring and the tinted row already say that. Inventing a third
+    // word for it gave two rows in the same state different labels.
     const note = button.querySelector('small');
-    if (note) {
-      if (!button.dataset.desc) button.dataset.desc = note.textContent.trim();
-      note.textContent = status[phase] ? 'Complete' : active ? 'In progress' : button.dataset.desc;
-    }
+    if (note) note.textContent = status[phase] ? 'Complete' : 'In progress';
     if (active) button.setAttribute('aria-current','step');
     else button.removeAttribute('aria-current');
     button.setAttribute('aria-label',`${button.querySelector('strong')?.textContent || label(phase)} phase, ${active?'current':status[phase]?'complete':'not complete'}`);
