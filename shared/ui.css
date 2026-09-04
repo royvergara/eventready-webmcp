@@ -130,9 +130,13 @@ summary.btn:focus-visible{ outline:2px solid var(--carbon); outline-offset:2px; 
   padding:.5rem .6rem; list-style:none;
 }
 .toolsum::-webkit-details-marker{ display:none; }
-/* the marker leads here rather than trails, so the names stay left-aligned to scan */
-.toolsum::before{ content:"\25B8"; color:var(--ink-mute); font-size:.8rem; }
-details[open] > .toolsum::before{ content:"\25BE"; }
+/* A stroked chevron reads as disclosure at small sizes; the old solid triangle
+   collapsed into a bullet beside dense tool names. */
+.toolsum::before{
+  width:.4rem; height:.4rem; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor;
+  color:var(--ink-mute); content:""; transform:rotate(-45deg); transition:transform 140ms ease-out;
+}
+details[open] > .toolsum::before{ transform:rotate(45deg); }
 .toolsum:hover{ background:var(--paper-sunk); }
 .toolsum:focus-visible{ outline:2px solid var(--carbon); outline-offset:-2px; }
 .toolsum-note{ font-family:var(--font-mono); font-size:.7rem; color:var(--ink-mute); }

@@ -7,15 +7,18 @@
      have seen before, and this has to be switched off before it decides to. A module
      script is deferred, so setting it there is already too late. -->
 <script>history.scrollRestoration = 'manual';</script>
-<title>Smoke test · Catering WebMCP</title>
+<title>Discovery check · EventReady WebMCP</title>
 <link rel="stylesheet" href="/shared/fonts.css">
 <link rel="stylesheet" href="/shared/tailwind.css">
 <link rel="stylesheet" href="/shared/ui.css">
+<link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
-<body class="font-sans">
+<body class="font-sans technical-body">
 <div id="siteHeader"></div>
 
-<main class="mx-auto max-w-3xl px-5 py-8">
+<div class="docs-reference-shell">
+<aside id="docsSidebar"></aside>
+<main class="technical-main">
   <div class="sheethead">
     <div class="sheethead-band">
       <p class="kicker"><span class="kicker-no">05</span>Smoke test</p>
@@ -46,11 +49,13 @@
     </div>
   </section>
 </main>
+</div>
 
 <script type="module">
 import { toolHost } from '/shared/webmcp.js';
-import { mountHeader } from '/shared/ui.js';
-mountHeader('Smoke test');
+import { mountHeader, mountDocsSidebar } from '/shared/ui.js';
+mountHeader('Discovery check');
+mountDocsSidebar('Discovery check');
 
 const statusEl = document.getElementById('statusLine');
 const logEl = document.getElementById('log');

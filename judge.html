@@ -8,14 +8,11 @@
   <meta name="description" content="A concise verification path for EventReady's product experience and WebMCP implementation.">
   <link rel="stylesheet" href="/shared/fonts.css">
   <link rel="stylesheet" href="/shared/tailwind.css">
-  <link rel="stylesheet" href="/shared/product.css?v=39">
+  <link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to main content</a>
-  <header class="app-header">
-    <a class="brand" href="/" aria-label="EventReady home"><strong><span class="brand-event">Event</span><span class="brand-ready">Ready</span></strong><small>EVERYTHING IN PLACE</small></a>
-    <nav aria-label="Judge navigation"><a class="nav-link" href="/developers.html">WebMCP docs</a><a class="quiet-button" href="/">Open EventReady</a></nav>
-  </header>
+  <div id="siteHeader"></div>
   <main id="mainContent" class="judge-view" tabindex="-1">
     <header class="judge-hero">
       <div><p>JUDGE MODE · TWO-MINUTE PATH</p><h1>Verify the whole event—not just the tool list.</h1><span>EventReady turns a brief into a visible operating plan, lets a person and agent resolve the same readiness gaps, and only marks the event Ready when every critical handoff has evidence and an owner.</span></div>
@@ -41,5 +38,6 @@
     </section>
     <section class="judge-trust"><div><h2>Trust is demonstrated, not implied.</h2><p>Provider text is treated as untrusted data, restricted to fixed fields, quarantined when instruction-like, escaped before rendering, and excluded from ranking control.</p></div><dl aria-label="203 deterministic tests, 9 registered contracts, 1 shared visible plan"><div><dt>203</dt><dd>deterministic tests</dd></div><div><dt>9</dt><dd>registered contracts</dd></div><div><dt>1</dt><dd>shared visible plan</dd></div></dl></section>
   </main>
+  <script type="module">import { mountDocsHeader } from '/shared/ui.js'; mountDocsHeader('Judge Mode');</script>
 </body>
 </html>

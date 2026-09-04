@@ -11,20 +11,13 @@
 <link rel="stylesheet" href="/shared/fonts.css">
 <link rel="stylesheet" href="/shared/tailwind.css">
 <link rel="stylesheet" href="/shared/ui.css">
-<link rel="stylesheet" href="/shared/product.css?v=44">
+<link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
 <body class="font-sans harness-body">
-<header class="app-header docs-header harness-header">
-  <a class="brand" href="/" aria-label="EventReady home"><strong><span class="brand-event">Event</span><span class="brand-ready">Ready</span></strong><small>EVERYTHING IN PLACE</small></a>
-  <div class="harness-context"><span>Documentation</span><b>/</b><strong>Tool harness</strong></div>
-  <nav aria-label="Documentation utilities"><a href="/developers.html">Documentation</a><a href="/judge.html">Judge Mode</a><a class="docs-product-link" href="/">Open EventReady <span>↗</span></a></nav>
-</header>
+<div id="siteHeader"></div>
 
 <div class="harness-shell">
-<aside class="harness-nav" aria-label="Developer tools">
-  <nav><span>WebMCP tools</span><a href="/developers.html#tool-contracts">Tool contracts</a><a aria-current="page" href="/harness.html">Tool harness</a><a href="/smoke.html">Discovery check</a><a href="/gradient.html">Source quality</a></nav>
-  <div><span>Environment</span><strong><i></i> Production demo</strong><small>No credentials required</small></div>
-</aside>
+<aside id="docsSidebar"></aside>
 
 <main class="harness-main">
   <header class="harness-intro">
@@ -34,7 +27,7 @@
   </header>
 
   <div class="harness-workbench">
-  <section class="harness-tools" aria-labelledby="toolsTitle">
+  <section class="harness-tools ui-panel" aria-labelledby="toolsTitle">
     <div class="harness-panel-head"><div><span>Registry</span><h2 id="toolsTitle">Available tools</h2></div><span id="reg">Loading</span></div>
     <div class="harness-page-picker">
       <label for="pick" class="sr-only">Choose a page</label>
@@ -43,7 +36,7 @@
     <div id="tools" class="harness-tool-list"></div>
   </section>
 
-  <section class="harness-output" aria-labelledby="outputTitle">
+  <section class="harness-output ui-panel" aria-labelledby="outputTitle">
     <div class="harness-panel-head"><div><span>Response</span><h2 id="outputTitle">Tool output</h2></div><span id="outNote">Waiting for a call</span></div>
     <pre id="out" class="readout">Select Run beside a tool to inspect its structured response.</pre>
   </section>
@@ -56,7 +49,9 @@
 </div>
 
 <script type="module">
-import { esc } from '/shared/ui.js';
+import { esc, mountDocsHeader, mountDocsSidebar } from '/shared/ui.js';
+mountDocsHeader('Tool harness');
+mountDocsSidebar('Tool harness');
 const $ = id => document.getElementById(id);
 
 // Every page that registers tools, in the order the nav lists them. The harness loads
