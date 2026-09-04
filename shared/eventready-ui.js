@@ -1,6 +1,6 @@
 import { esc, label } from './ui.js';
 import { toolHost } from './webmcp.js';
-import { EventSession, buildEventReadyTools } from './eventready.js';
+import { EventSession, buildEventReadyTools, chronologicalOrder } from './eventready.js';
 import { admitVendors } from '../engine/trust.js';
 import { addBasketItem, basketMetrics, basketSubtotal, catalogFromVendors, recommendedBasket, setBasketQuantity, swapBasketItem } from './basket.js';
 
@@ -22,6 +22,23 @@ const PHASES = ['shape','source','coordinate','prepare','run'];
 let booking = parseStored(BOOKING_KEY);
 let eventStore = parseStored(EVENTS_KEY) || { version:1, events:{} };
 let currentEventId = null;
+// One set of line icons, drawn inline. Nothing is fetched, each scales with the
+// text around it and inherits its colour. They replace the ✓ ○ ● ! → × characters
+// the interface used to set as type: those render differently on every platform,
+// sit off the baseline, and at these sizes read as punctuation rather than state.
+const ICON_PATHS = {
+  check:    '<polyline points="3.5 8.4 6.6 11.5 12.5 4.8"/>',
+  circle:   '<circle cx="8" cy="8" r="4.6"/>',
+  dot:      '<circle cx="8" cy="8" r="3.2" fill="currentColor" stroke="none"/>',
+  alert:    '<path d="M8 4.1v4.3"/><circle cx="8" cy="11.4" r=".95" fill="currentColor" stroke="none"/>',
+  arrow:    '<path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/>',
+  back:     '<path d="M12.8 8h-9"/><polyline points="7.4 4.4 3.8 8 7.4 11.6"/>',
+  chevron:  '<polyline points="4.4 6.4 8 10 11.6 6.4"/>',
+  up:       '<path d="M8 12.8v-9"/><polyline points="4.4 7.4 8 3.8 11.6 7.4"/>',
+  close:    '<path d="M4.6 4.6 11.4 11.4"/><path d="M11.4 4.6 4.6 11.4"/>'
+};
+const icon = (name, extra='') => `<svg class="icon${extra?' '+extra:''}" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name]||''}</svg>`;
+
 let appState = { route:'start', activePhase:'shape', shapeStep:0, proposal:null, packageOptionId:null, catalogMode:null, replaceBasketKey:null, pendingBrief:null, runSheetExpanded:false };
 let eventOps = createEventOps();
 let toastTimer;
@@ -199,7 +216,7 @@ function renderSavedEvents() {
   if (!$('savedEventsList')) return;
   const events = Object.values(eventStore.events).filter(item=>item.id!=='sample-wedding').sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
   $('savedEventsSection').hidden = events.length === 0;
-  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue →</span></button>`).join('');
+  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue ${icon('arrow')}</span></button>`).join('');
   document.querySelectorAll('[data-open-event]').forEach(button=>button.onclick=()=>restoreEvent(button.dataset.openEvent));
 }
 
@@ -460,12 +477,12 @@ function phaseHeader(kicker,title,description,done,labelText='Complete') {
 }
 
 function nextAction(title,button,attribute) {
-  return `<aside class="next-action"><div><span>NEXT BEST ACTION</span><strong>${esc(title)}</strong></div><button class="primary-button" ${attribute}>${esc(button)} →</button></aside>${impactBanner()}`;
+  return `<aside class="next-action"><div><span>NEXT BEST ACTION</span><strong>${esc(title)}</strong></div><button class="primary-button" ${attribute}>${esc(button)} ${icon('arrow')}</button></aside>${impactBanner()}`;
 }
 
 function impactBanner() {
   if (!eventOps.lastImpact) return '';
-  return `<aside class="impact-banner"><span>✓</span><div><strong>Plan updated</strong><small>${esc(eventOps.lastImpact.message)}</small></div><button data-dismiss-impact type="button" aria-label="Dismiss update">×</button></aside>`;
+  return `<aside class="impact-banner"><span>${icon('check')}</span><div><strong>Plan updated</strong><small>${esc(eventOps.lastImpact.message)}</small></div><button data-dismiss-impact type="button" aria-label="Dismiss update">×</button></aside>`;
 }
 
 function renderShapePhase(state) {
@@ -474,7 +491,7 @@ function renderShapePhase(state) {
   document.querySelector('[data-phase-view="shape"]').innerHTML = `${phaseHeader('PHASE 1','The event, clearly defined','Keep the brief, constraints, and priorities visible before making commitments.',true)}${nextAction('Compare services against this brief','Continue to Source','data-phase-jump="source"')}
     <article class="plan-banner"><div><h3>${esc(state.brief.title)}</h3><p>EventReady is accounting for venue requirements, service coverage, timing, ownership, and budget together.</p></div><div class="decision-count"><strong>${open}</strong><span>open decisions</span></div></article>
     <section class="section-block"><header><h3>Working facts</h3><button class="quiet-button" data-edit-shape>Edit brief</button></header><div class="fact-grid"><div><span>Date & time · ${esc(state.brief.provenance?.serveAt||'given')}</span><strong>${esc(formatDate(state.brief.serveAt))}</strong></div><div><span>Venue · ${esc(state.brief.provenance?.venueName||'given')}</span><strong>${esc(state.brief.venueName)}</strong></div><div><span>Guests · ${esc(state.brief.provenance?.headcount||'given')}</span><strong>${state.brief.headcount}</strong></div><div><span>Budget · ${esc(state.brief.provenance?.budget||'given')}</span><strong>$${Number(state.brief.budget).toLocaleString()}</strong></div></div></section>
-    <section class="section-block"><header><h3>Requirements being carried forward</h3><p>Calculated from the current brief</p></header><div class="plan-phases"><article class="plan-phase-row done"><span>✓</span><div><h4>Venue foundation</h4><p>${esc(state.brief.venueName)} · ${state.brief.venueHasKitchen?'Kitchen available':'No working kitchen recorded'}</p></div><button data-phase-jump="source">Continue →</button></article><article class="plan-phase-row"><span>2</span><div><h4>Guest needs</h4><p>${esc(needs)}</p></div><button data-edit-shape>Review</button></article><article class="plan-phase-row"><span>3</span><div><h4>Operational ownership</h4><p>${state.readiness.responsibilities.filter(row=>row.status==='unresolved').length} required jobs still need an explicit owner</p></div><button data-phase-jump="coordinate">Open →</button></article></div></section>`;
+    <section class="section-block"><header><h3>Requirements being carried forward</h3><p>Calculated from the current brief</p></header><div class="plan-phases"><article class="plan-phase-row done"><span>${icon('check')}</span><div><h4>Venue foundation</h4><p>${esc(state.brief.venueName)} · ${state.brief.venueHasKitchen?'Kitchen available':'No working kitchen recorded'}</p></div><button data-phase-jump="source">Continue →</button></article><article class="plan-phase-row"><span>2</span><div><h4>Guest needs</h4><p>${esc(needs)}</p></div><button data-edit-shape>Review</button></article><article class="plan-phase-row"><span>3</span><div><h4>Operational ownership</h4><p>${state.readiness.responsibilities.filter(row=>row.status==='unresolved').length} required jobs still need an explicit owner</p></div><button data-phase-jump="coordinate">Open →</button></article></div></section>`;
 }
 
 function renderSourcePhase(state) {
@@ -494,7 +511,7 @@ function renderSourcePhase(state) {
     <article class="service-brief"><div><span class="kicker">CURRENT REQUIREMENT</span><h3>Reception service for ${state.brief.headcount} guests</h3><p>Must cover recorded dietary needs and fit ${esc(state.brief.venueName)}’s operating requirements.</p></div><span class="sample-label">FICTIONAL SAMPLE PROVIDERS</span></article>
     <section class="provider-legend" aria-label="How to read provider results"><div><strong>Requirements</strong><span>Generated from your brief and venue constraints.</span></div><div><strong>Capabilities</strong><span>Structured sample records read through the same planning contracts used by WebMCP.</span></div><div><strong>Availability</strong><span>Not live. Confirm dates and pricing directly before relying on a provider.</span></div></section>
     <div class="provider-list">${options}</div>
-    ${committed?`<article class="commitment commitment-lifecycle"><header><div><span class="kicker">WORKING COMMITMENT</span><h3>${esc(committed.label)}</h3></div><strong>$${Number(committed.total||committed.subtotal).toLocaleString()}</strong></header><div class="lifecycle">${[['selected','Selected'],['requested','Quote requested'],['received','Quote received'],['confirmed','Provider confirmed']].map(([key,text])=>`<button class="${eventOps.commitmentStatus===key?'active':''}" data-commitment-status="${key}"><span>${eventOps.commitmentStatus===key?'●':'○'}</span>${text}</button>`).join('')}</div><div class="commitment-evidence"><span>${eventOps.commitmentStatus==='selected'?'WORKING PLAN':eventOps.commitmentStatus==='requested'?'SAMPLE REQUEST':eventOps.commitmentStatus==='received'?'SAMPLE QUOTE':'CONFIRMATION ER-1048'}</span><strong>${eventOps.commitmentStatus==='selected'?'Package saved for review':eventOps.commitmentStatus==='requested'?'Availability request prepared':eventOps.commitmentStatus==='received'?'Quote received · 30% deposit proposed':'Provider terms recorded'}</strong><small>${eventOps.commitmentStatus==='received'?'Sample quote expires in 14 days.':eventOps.commitmentStatus==='confirmed'?'Availability and terms marked verified for this demo.':'Advance the status only when the real-world handoff occurs.'}</small></div><p class="prototype-note">Statuses are simulated locally. No provider was contacted and no payment was taken.</p><div class="handoff-panel"><strong>${eventOps.commitmentStatus==='confirmed'?'Confirmation recorded for this demo':'Provider confirmation required'}</strong><span>Availability, final pricing, contract terms, and deposit must still be verified directly.</span><button class="quiet-button" data-copy-provider-request>Copy confirmation request</button></div><div class="commitment-actions"><button class="quiet-button" data-open-package="${esc(committed.optionId)}">Review package</button><button class="quiet-button danger" data-remove-booking>Remove commitment</button></div></article>`:''}`;
+    ${committed?`<article class="commitment commitment-lifecycle"><header><div><span class="kicker">WORKING COMMITMENT</span><h3>${esc(committed.label)}</h3></div><strong>$${Number(committed.total||committed.subtotal).toLocaleString()}</strong></header><div class="lifecycle">${[['selected','Selected'],['requested','Quote requested'],['received','Quote received'],['confirmed','Provider confirmed']].map(([key,text])=>`<button class="${eventOps.commitmentStatus===key?'active':''}" data-commitment-status="${key}"><span>${icon(eventOps.commitmentStatus===key?'dot':'circle')}</span>${text}</button>`).join('')}</div><div class="commitment-evidence"><span>${eventOps.commitmentStatus==='selected'?'WORKING PLAN':eventOps.commitmentStatus==='requested'?'SAMPLE REQUEST':eventOps.commitmentStatus==='received'?'SAMPLE QUOTE':'CONFIRMATION ER-1048'}</span><strong>${eventOps.commitmentStatus==='selected'?'Package saved for review':eventOps.commitmentStatus==='requested'?'Availability request prepared':eventOps.commitmentStatus==='received'?'Quote received · 30% deposit proposed':'Provider terms recorded'}</strong><small>${eventOps.commitmentStatus==='received'?'Sample quote expires in 14 days.':eventOps.commitmentStatus==='confirmed'?'Availability and terms marked verified for this demo.':'Advance the status only when the real-world handoff occurs.'}</small></div><p class="prototype-note">Statuses are simulated locally. No provider was contacted and no payment was taken.</p><div class="handoff-panel"><strong>${eventOps.commitmentStatus==='confirmed'?'Confirmation recorded for this demo':'Provider confirmation required'}</strong><span>Availability, final pricing, contract terms, and deposit must still be verified directly.</span><button class="quiet-button" data-copy-provider-request>Copy confirmation request</button></div><div class="commitment-actions"><button class="quiet-button" data-open-package="${esc(committed.optionId)}">Review package</button><button class="quiet-button danger" data-remove-booking>Remove commitment</button></div></article>`:''}`;
 }
 
 function basketState(option) {
@@ -525,12 +542,12 @@ function coverageMarkup(metrics) {
   const chips=[];
   chips.push(metrics.servingShort
     ? `<span class="coverage-chip warning">! ${metrics.servingShort} guest servings short</span>`
-    : `<span class="coverage-chip good">✓ ${metrics.servings} guest servings</span>`);
+    : `<span class="coverage-chip good">${icon('check')} ${metrics.servings} guest servings</span>`);
   for (const [kind,result] of Object.entries(metrics.dietary)) {
     if (!result.needed) continue;
     chips.push(result.short
       ? `<span class="coverage-chip warning">! ${result.short} ${esc(label(kind))} short</span>`
-      : `<span class="coverage-chip good">✓ ${result.needed} ${esc(label(kind))}</span>`);
+      : `<span class="coverage-chip good">${icon('check')} ${result.needed} ${esc(label(kind))}</span>`);
   }
   return chips.join('');
 }
@@ -613,7 +630,7 @@ function renderCoordinatePhase(state) {
     const assignedId=eventOps.assignmentPeople[row.id]; const person=eventOps.team.find(item=>item.id===assignedId);
     const accepted=!!eventOps.assignmentAcceptance[row.id];
     const detail = row.owner === 'provider' ? `${row.when || 'Timing to confirm'} · ${row.evidence}` : (row.when || 'Timing to confirm');
-    return `<article class="responsibility-row ${row.owner==='provider'?'provider-owned':'assignable'}"><div><strong>${esc(label(row.resource))}</strong><small>${esc(detail)}</small></div>${row.owner==='provider'?`<span class="owner-pill">${esc(row.ownerLabel)}</span><span>✓</span>`:`<div class="assignment-control"><select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${esc(label(row.resource))}">${person?`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`:''}${personOptions}</select>${person?`<button class="acceptance-toggle ${accepted?'accepted':''}" aria-pressed="${accepted}" data-accept-assignment="${esc(row.id)}" type="button">${accepted?'✓ Accepted':'Awaiting acceptance'}</button>`:''}</div>`}</article>`;
+    return `<article class="responsibility-row ${row.owner==='provider'?'provider-owned':'assignable'}"><div><strong>${esc(label(row.resource))}</strong><small>${esc(detail)}</small></div>${row.owner==='provider'?`<span class="owner-pill">${esc(row.ownerLabel)}</span><span>${icon('check')}</span>`:`<div class="assignment-control"><select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${esc(label(row.resource))}">${person?`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`:''}${personOptions}</select>${person?`<button class="acceptance-toggle ${accepted?'accepted':''}" aria-pressed="${accepted}" data-accept-assignment="${esc(row.id)}" type="button">${accepted?`${icon('check')} Accepted`:'Awaiting acceptance'}</button>`:''}</div>`}</article>`;
   }).join(''):'<article class="responsibility-row empty"><div><strong>Nothing here</strong><small>No responsibilities in this group.</small></div></article>'}</section>`).join('');
   const budget = Number(state.brief.budget) || 0;
   const committed = current?.total || current?.subtotal || 0;
@@ -631,11 +648,11 @@ function renderPreparePhase(state) {
   const open = [...state.readiness.blockers.map(item=>({type:'Blocker',title:item.message||item.kind||'Coverage issue',detail:item.detail||'Requires a plan change',route:BLOCKER_ROUTE[item.check]||BLOCKER_ROUTE.coverage})),...unresolved.map(row=>({type:'Unowned',title:label(row.resource).replace(/^./,ch=>ch.toUpperCase()),detail:`${row.when||'Timing to confirm'} · ${row.evidence}`,route:BLOCKER_ROUTE.unclaimed}))];
   const confirmations=Object.values(eventOps.confirmation).filter(Boolean).length;
   document.querySelector('[data-phase-view="prepare"]').innerHTML = `${phaseHeader('EVENT PREFLIGHT',operating.status==='ready'?'Cleared for event day':operating.status==='confirmations'?'The plan is complete. Confirm the real-world handoffs.':'Close the gaps before they become surprises','A plan is only ready when its coverage, people, provider, timing, and critical confirmations agree.',operating.status==='ready','Cleared')}${nextAction(open.length?'Resolve the highest-impact blocker':operating.status==='confirmations'?'Complete the critical confirmations':'Open the operational run plan',open.length?(state.serviceLevel==='pickup'?'Review delivery':'Open Coordinate'):operating.status==='confirmations'?'Review confirmations':'Open Run',open.length?(state.serviceLevel==='pickup'?'data-review-delivery':'data-phase-jump="coordinate"'):operating.status==='confirmations'?'data-scroll-confirmations':'data-phase-jump="run"')}
-    <section class="readiness-transition ${operating.status}"><div><span>${state.readiness.state==='ready'?'✓':'1'}</span><strong>Operating plan</strong><small>${state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved.length}/${state.readiness.responsibilities.length} covered · ${state.readiness.blockers.length} blockers · ${unresolved.length} unowned</small></div><i></i><div><span>${operating.status==='ready'?'✓':'2'}</span><strong>External verification</strong><small>${confirmations}/5 critical facts recorded</small></div><i></i><div><span>${operating.status==='ready'?'✓':'3'}</span><strong>Ready to run</strong><small>${operating.status==='ready'?'Shareable operating plan':'Unlocks when both stages agree'}</small></div></section>
-    <div class="readiness-matrix" id="readinessAreas">${operating.areas.map(area=>`<article class="${area.status}"><span>${area.status==='ready'?'✓':area.status==='blocked'?'!':'○'}</span><div><strong>${esc(area.label)}</strong><small>${esc(area.detail)}</small>${(area.confirms||[]).length?`<div class="area-confirms">${area.confirms.map(key=>`<label><input type="checkbox" data-confirmation="${key}" ${eventOps.confirmation[key]?'checked':''}><span><strong>${esc(CONFIRMATION_LABELS[key])}</strong><small>${eventOps.confirmation[key]?'Recorded for this demo plan':'Still needs confirmation'}</small></span></label>`).join('')}</div>`:''}</div><div class="area-action"><b>${esc(area.status==='ready'?'Ready':area.status==='blocked'?'Blocked':'Confirm')}</b>${area.action?`<button class="quiet-button" data-phase-jump="${area.action.phase}">${esc(area.action.label)}</button>`:''}</div></article>`).join('')}</div>
+    <section class="readiness-transition ${operating.status}"><div><span>${state.readiness.state==='ready'?icon('check'):'1'}</span><strong>Operating plan</strong><small>${state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved.length}/${state.readiness.responsibilities.length} covered · ${state.readiness.blockers.length} blockers · ${unresolved.length} unowned</small></div><i></i><div><span>${operating.status==='ready'?icon('check'):'2'}</span><strong>External verification</strong><small>${confirmations}/5 critical facts recorded</small></div><i></i><div><span>${operating.status==='ready'?icon('check'):'3'}</span><strong>Ready to run</strong><small>${operating.status==='ready'?'Shareable operating plan':'Unlocks when both stages agree'}</small></div></section>
+    <div class="readiness-matrix" id="readinessAreas">${operating.areas.map(area=>`<article class="${area.status}"><span>${icon(area.status==='ready'?'check':area.status==='blocked'?'alert':'circle')}</span><div><strong>${esc(area.label)}</strong><small>${esc(area.detail)}</small>${(area.confirms||[]).length?`<div class="area-confirms">${area.confirms.map(key=>`<label><input type="checkbox" data-confirmation="${key}" ${eventOps.confirmation[key]?'checked':''}><span><strong>${esc(CONFIRMATION_LABELS[key])}</strong><small>${eventOps.confirmation[key]?'Recorded for this demo plan':'Still needs confirmation'}</small></span></label>`).join('')}</div>`:''}</div><div class="area-action"><b>${esc(area.status==='ready'?'Ready':area.status==='blocked'?'Blocked':'Confirm')}</b>${area.action?`<button class="quiet-button" data-phase-jump="${area.action.phase}">${esc(area.action.label)}</button>`:''}</div></article>`).join('')}</div>
     <p class="prototype-note">These confirmations record verification for the demo. Nothing here contacts a provider or processes payment.</p>
     <div class="readiness-grid"><article class="readiness-card"><span>Coverage</span><strong>${state.readiness.counts?.covered ?? state.readiness.responsibilities.filter(row=>row.status!=='unresolved').length}</strong></article><article class="readiness-card"><span>Blockers</span><strong>${state.readiness.blockers.length}</strong></article><article class="readiness-card"><span>Unowned work</span><strong>${unresolved.length}</strong></article></div>
-    <section class="section-block"><header><h3>${open.length?'What still needs attention':operating.status==='ready'?'Every critical need has a clear path':'The operating plan is complete; external confirmations remain'}</h3>${state.serviceLevel==='pickup'&&open.length?'<button class="primary-button" data-review-delivery>Review delivery option</button>':''}</header><div class="blocker-list">${open.length?open.slice(0,12).map(item=>`<article class="blocker-row"><span>!</span><div><h4>${esc(item.title)}</h4><p>${esc(item.type)} · ${esc(item.detail)}</p></div><button class="quiet-button" data-phase-jump="${item.route.phase}">${esc(item.route.label)}</button></article>`).join(''):operating.status==='ready'?'<article class="commitment"><h3>Ready to run</h3><p>Coverage, timing, ownership, and critical confirmations are satisfied. Open the run plan to share the operating sequence.</p><button class="primary-button" data-phase-jump="run">Open run plan →</button></article>':'<article class="commitment pending"><h3>Confirm before relying on this plan</h3><p>The operational structure is complete, but provider, deposit, final-count, or venue checks are still outstanding.</p><button class="primary-button" data-scroll-confirmations>Review confirmations ↑</button></article>'}</div></section>`;
+    <section class="section-block"><header><h3>${open.length?'What still needs attention':operating.status==='ready'?'Every critical need has a clear path':'The operating plan is complete; external confirmations remain'}</h3>${state.serviceLevel==='pickup'&&open.length?'<button class="primary-button" data-review-delivery>Review delivery option</button>':''}</header><div class="blocker-list">${open.length?open.slice(0,12).map(item=>`<article class="blocker-row"><span>${icon('alert')}</span><div><h4>${esc(item.title)}</h4><p>${esc(item.type)} · ${esc(item.detail)}</p></div><button class="quiet-button" data-phase-jump="${item.route.phase}">${esc(item.route.label)}</button></article>`).join(''):operating.status==='ready'?`<article class="commitment"><h3>Ready to run</h3><p>Coverage, timing, ownership, and critical confirmations are satisfied. Open the run plan to share the operating sequence.</p><button class="primary-button" data-phase-jump="run">Open run plan ${icon('arrow')}</button></article>`:`<article class="commitment pending"><h3>Confirm before relying on this plan</h3><p>The operational structure is complete, but provider, deposit, final-count, or venue checks are still outstanding.</p><button class="primary-button" data-scroll-confirmations>Review confirmations ${icon('up')}</button></article>`}</div></section>`;
 }
 
 function renderRunPhase(state) {
@@ -648,9 +665,9 @@ function renderRunPhase(state) {
   document.querySelector('[data-phase-view="run"]').innerHTML = `${phaseHeader('EVENT DAY',ready?'The plan everyone can follow':'Your working run-of-show',ready?'Every moment has an owner and evidence from the current plan.':'This remains a draft until critical gaps and ownership are resolved.',ready,ready?'Ready':'Draft')}
     <section class="run-mobile-mode"><span class="kicker">NOW IN THE PLAN</span><div class="run-now"><time>${esc(activeRow.at)}</time><div><h3>${esc(activeRow.action)}</h3><p>${esc(activeRow.owner)} · ${esc(activeRow.evidence)}</p></div></div>${activeRow.key!=='none'?`<button class="primary-button" data-complete-row="${esc(activeRow.key)}">Mark complete</button>`:''}${nextRow?`<div class="run-next"><span>UP NEXT · ${esc(nextRow.at)}</span><strong>${esc(nextRow.action)}</strong></div>`:''}<div class="run-mobile-actions"><button class="quiet-button" data-toggle-run-sheet>${appState.runSheetExpanded?'Hide full run sheet':'View full run sheet'}</button><button class="quiet-button" data-report-issue>Report an issue</button></div></section>
     <section class="run-cover"><div><span>${esc(label(state.brief.eventType))}</span><h3>${esc(state.brief.title)}</h3><p>${esc(formatDate(state.brief.serveAt))} · ${esc(state.brief.venueName)}</p></div><aside><span>EVENTREADY</span><strong>${ready?'Ready to share':'Working draft'}</strong></aside></section>
-    <div class="run-banner ${ready?'ready':''}"><strong>${ready?'READY TO SHARE':'DRAFT PLAN'}</strong><span>${ready?'Use this sequence with providers and the event team.':'Resolve remaining decisions before relying on this plan.'}</span><div><button class="quiet-button" data-copy-run>Copy</button> <button class="quiet-button" data-print-run>Print</button></div></div>
+    <div class="run-banner ${ready?'ready':''}"><strong>${ready?'READY TO SHARE':'DRAFT PLAN'}</strong><span>${ready?'Use this sequence with providers and the event team.':'Resolve remaining decisions before relying on this plan.'}</span><div class="run-actions"><details class="share-menu"><summary class="quiet-button">Share ${icon('chevron')}</summary><div><button type="button" data-copy-run>Copy plan</button><button type="button" data-email-run>Email plan</button></div></details><button class="quiet-button" data-print-run>Print</button></div></div>
     <div class="run-contacts"><span class="kicker">EVENT TEAM</span>${eventOps.team.map(person=>`<article><span>${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)}</small></div><a href="${person.contact?.includes('@')?'mailto:':'tel:'}${esc(person.contact||'')}">${esc(person.contact||'No contact')}</a></article>`).join('')}</div>
-    <div class="run-table ${appState.runSheetExpanded?'expanded':''}">${run.rows.map((row,index)=>`<article class="run-row ${eventOps.completedRows[index]?'complete':''}"><button class="run-check" data-complete-row="${index}" aria-label="Mark ${esc(row.action)} complete">${eventOps.completedRows[index]?'✓':'○'}</button><time>${esc(row.at)}</time><div><h4>${esc(row.action)}</h4><p>${esc(row.evidence)} · ${esc(state.brief.venueName)}</p></div><span>${esc(row.owner)}</span></article>`).join('')}${eventOps.customTasks.map((task,index)=>`<article class="run-row ${eventOps.completedRows[`custom-${index}`]?'complete':''}"><button class="run-check" data-complete-row="custom-${index}">${eventOps.completedRows[`custom-${index}`]?'✓':'○'}</button><time>${esc(task.when||'Time TBD')}</time><div><h4>${esc(task.name)}</h4><p>Custom responsibility · ${esc(state.brief.venueName)}</p></div><span>${esc(eventOps.team.find(person=>person.id===task.ownerId)?.name||'Unassigned')}</span></article>`).join('')}</div>`;
+    <div class="run-table run-sheet ${appState.runSheetExpanded?'expanded':''}">${runSegments(run,state).map(segment=>`<section class="run-segment"><header><span class="kicker">${esc(segment.label)}</span><small>${segment.items.length} item${segment.items.length===1?'':'s'}${segment.window?` · ${esc(segment.window)}`:''}</small></header>${segment.items.map(item=>`<article class="run-row ${eventOps.completedRows[item.key]?'complete':''}"><button class="run-check" data-complete-row="${esc(item.key)}" aria-label="Mark ${esc(item.action)} complete">${icon(eventOps.completedRows[item.key]?'check':'circle')}</button><time>${esc(item.at)}</time><div><h4>${esc(item.action)}</h4><p>${esc(item.meta)}</p></div><span class="run-owner${item.owner==='Unassigned'?' unassigned':''}">${item.owner==='Unassigned'?icon('alert'):''}${esc(item.owner)}</span></article>`).join('')}</section>`).join('')}</div>`;
 }
 
 // Where a blocker is actually resolved. The engine already tags every finding
@@ -735,7 +752,7 @@ function openProposal(proposal) {
   appState.proposal = proposal;
   $('proposalTitle').textContent = proposal.title;
   $('proposalSummary').textContent = proposal.summary;
-  $('proposalDelta').innerHTML = `<div><span>Before</span><strong>${proposal.before.open} open</strong><small>$${Number(proposal.before.cost).toLocaleString()}</small></div><span>→</span><div><span>After</span><strong>${proposal.after.open} open</strong><small>$${Number(proposal.after.cost).toLocaleString()}</small></div>`;
+  $('proposalDelta').innerHTML = `<div><span>Before</span><strong>${proposal.before.open} open</strong><small>$${Number(proposal.before.cost).toLocaleString()}</small></div><span>${icon('arrow')}</span><div><span>After</span><strong>${proposal.after.open} open</strong><small>$${Number(proposal.after.cost).toLocaleString()}</small></div>`;
   $('proposalRisks').innerHTML = `<strong>Keep in mind</strong><p>${esc(proposal.risk)}</p>`;
   openOverlay('proposalOverlay');
 }
@@ -796,7 +813,9 @@ function bindDynamicActions() {
   $('customTaskForm')?.addEventListener('submit',event=>{event.preventDefault();const name=$('customTaskName').value.trim();if(!name)return;eventOps.customTasks.push({name,when:$('customTaskWhen').value.trim(),ownerId:$('customTaskOwner').value});persist();renderWorkspace(session.snapshot());});
   if ($('venueCost')) $('venueCost').onchange=()=>{eventOps.ledger.venue=Math.max(0,Number($('venueCost').value)||0);persist();renderWorkspace(session.snapshot());};
   if ($('depositPaid')) $('depositPaid').onchange=()=>{eventOps.ledger.depositPaid=$('depositPaid').checked;eventOps.confirmation.deposit=$('depositPaid').checked;persist();renderWorkspace(session.snapshot());};
-  document.querySelectorAll('[data-copy-run]').forEach(button => button.onclick = copyRun);
+  const closeShare = button => button.closest('details')?.removeAttribute('open');
+  document.querySelectorAll('[data-copy-run]').forEach(button => button.onclick = () => { closeShare(button); copyRun(); });
+  document.querySelectorAll('[data-email-run]').forEach(button => button.onclick = () => { closeShare(button); emailRun(); });
   document.querySelectorAll('[data-copy-brief]').forEach(button => button.onclick = copyEventBrief);
   document.querySelectorAll('[data-print-run]').forEach(button => button.onclick = () => window.print());
   document.querySelectorAll('[data-toggle-agent-guide]').forEach(button=>button.onclick=()=>{const guide=$('sampleAgentGuide');guide.dataset.open=guide.dataset.open==='true'?'false':'true';renderWorkspace(session.snapshot());if(guide.dataset.open==='true')guide.scrollIntoView({behavior:'smooth',block:'center'});});
@@ -811,10 +830,56 @@ async function copyText(text,promptLabel='Copy this text:') {
   try { await navigator.clipboard.writeText(text); } catch { window.prompt(promptLabel,text); }
 }
 
-async function copyRun() {
+function runPlanText() {
   const run = session.runOfShow();
-  const text = [`${run.event.title} — ${run.status.toUpperCase()}`,...run.rows.map(row=>`${row.at} | ${row.action} | ${row.owner} | ${row.evidence}`)].join('\n');
-  try { await navigator.clipboard.writeText(text); } catch { window.prompt('Copy the run plan:',text); }
+  return [`${run.event.title} — ${run.status.toUpperCase()}`,...run.rows.map(row=>`${row.at} | ${row.action} | ${row.owner} | ${row.evidence}`)].join('\n');
+}
+
+// A run of show is read in segments, not as one flat list. The boundaries come
+// from the event's own service time, so a lunch and a late dinner both group
+// sensibly rather than against a hardcoded evening.
+function runSegments(run, state) {
+  const clock = value => { const [h,m] = String(value).slice(11,16).split(':').map(Number);
+    return Number.isFinite(h) ? h*60+m : 18*60; };
+  const serve = clock(state.brief.serveAt);
+  const finish = serve + Math.round((Number(state.brief.durationHours)||3)*60);
+  const definitions = [
+    { id:'confirmed', label:'Confirmed in advance', within:value => value < 0 },
+    { id:'earlier',   label:'Earlier that day',     within:value => value < serve - 240 },
+    { id:'setup',     label:'Setup',                within:value => value < serve },
+    { id:'service',   label:'Service',              within:value => value <= finish },
+    { id:'after',     label:'After service',        within:value => value < 2*1440 },
+    { id:'later',     label:'Following days',       within:() => true }
+  ];
+  const items = [
+    ...run.rows.map((row,index)=>({key:String(index),at:row.at,action:row.action,owner:row.owner,
+      meta:`${row.evidence} · ${state.brief.venueName}`})),
+    ...eventOps.customTasks.map((task,index)=>({key:`custom-${index}`,at:task.when||'Time TBD',action:task.name,
+      owner:eventOps.team.find(person=>person.id===task.ownerId)?.name||'Unassigned',
+      meta:`Custom responsibility · ${state.brief.venueName}`}))
+  ];
+  return definitions.map(definition => {
+    const mine = items.filter(item => {
+      const value = chronologicalOrder(item.at);
+      return definitions.find(candidate => candidate.within(value)).id === definition.id;
+    }).sort((a,b)=>chronologicalOrder(a.at)-chronologicalOrder(b.at));
+    // the window a reader scans for: when this part of the day starts and ends
+    const timed = mine.map(item=>item.at).filter(at=>/\d/.test(at));
+    const window = timed.length>1 && timed[0]!==timed[timed.length-1] ? `${timed[0]} – ${timed[timed.length-1]}` : timed[0]||'';
+    return { ...definition, items:mine, window };
+  }).filter(segment => segment.items.length);
+}
+
+async function copyRun() {
+  await copyText(runPlanText(),'Copy the run plan:');
+}
+
+// Opens a draft in whatever mail client the reader uses. Nothing is sent from
+// here — the same handoff rule the rest of the app follows.
+function emailRun() {
+  const run = session.runOfShow();
+  const subject = `${run.event.title} — run of show (${run.status})`;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(runPlanText())}`;
 }
 
 async function copyEventBrief() {
