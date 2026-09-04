@@ -217,10 +217,8 @@ function renderSavedEvents() {
   if (!$('savedEventsList')) return;
   const events = Object.values(eventStore.events).filter(item=>item.id!=='sample-wedding').sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
   $('savedEventsSection').hidden = events.length === 0;
-  $('savedEventsList').innerHTML = events.map(item=>`<div class="saved-event-row"><button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue ${icon('arrow')}</span></button><div class="saved-event-actions"><button class="quiet-button" type="button" data-rename-event="${esc(item.id)}">Rename</button><button class="quiet-button danger" type="button" data-delete-event="${esc(item.id)}">Delete</button></div></div>`).join('');
+  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue ${icon('arrow')}</span></button>`).join('');
   document.querySelectorAll('[data-open-event]').forEach(button=>button.onclick=()=>restoreEvent(button.dataset.openEvent));
-  document.querySelectorAll('[data-rename-event]').forEach(button=>button.onclick=()=>renameEventFromList(button.dataset.renameEvent));
-  document.querySelectorAll('[data-delete-event]').forEach(button=>button.onclick=()=>askDeleteEvent(button.dataset.deleteEvent));
 }
 
 
@@ -249,12 +247,6 @@ function applyEventRename(id, title) {
   renderSavedEvents();
   showToast(`Renamed to ${next}.`);
   return true;
-}
-
-function renameEventFromList(id) {
-  restoreEvent(id);
-  showRoute('workspace');
-  startRenameCurrentEvent();
 }
 
 function startRenameCurrentEvent() {
