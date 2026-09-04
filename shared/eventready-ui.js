@@ -489,6 +489,7 @@ function renderEventBriefing(state) {
 }
 
 function renderWorkspace(state = session.snapshot()) {
+  resetOwnerHues();
   const status = phaseState(state);
   const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved');
   const days = Math.max(0, Math.ceil((new Date(state.brief.serveAt) - new Date()) / 86400000));
@@ -680,12 +681,12 @@ function renderCoordinatePhase(state) {
     ['Your event team',state.readiness.responsibilities.filter(row => row.owner === 'organizer')],
     ['Still unassigned',state.readiness.responsibilities.filter(row => row.status === 'unresolved')]
   ];
-  const personOptions=`<option value="">Choose owner…</option>${eventOps.team.map(person=>`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`).join('')}`;
+  const personOptions=`<option value="">Choose owner…</option>${eventOps.team.map(person=>`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`).join('')}<option value="not_applicable">Not needed for this event</option>`;
   const groupHtml = groups.map(([name,rows]) => `<section class="responsibility-group"><header><h3>${esc(name)}</h3><span>${rows.length} responsibilities</span></header>${rows.length?rows.slice(0,16).map(row=>{
     const assignedId=eventOps.assignmentPeople[row.id]; const person=eventOps.team.find(item=>item.id===assignedId);
     const accepted=!!eventOps.assignmentAcceptance[row.id];
     const detail = row.owner === 'provider' ? `${row.when || 'Timing to confirm'} · ${row.evidence}` : (row.when || 'Timing to confirm');
-    return `<article class="responsibility-row ${row.owner==='provider'?'provider-owned':'assignable'}"><div><strong>${esc(label(row.resource))}</strong><small>${esc(detail)}</small></div>${row.owner==='provider'?`<span class="owner-pill">${esc(row.ownerLabel)}</span><span>${icon('check')}</span>`:`<div class="assignment-control"><select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${esc(label(row.resource))}">${person?`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`:''}${personOptions}</select>${person?`<button class="acceptance-toggle ${accepted?'accepted':''}" aria-pressed="${accepted}" data-accept-assignment="${esc(row.id)}" type="button">${accepted?`${icon('check')} Accepted`:'Awaiting acceptance'}</button>`:''}</div>`}</article>`;
+    return `<article class="responsibility-row ${row.owner==='provider'?'provider-owned':'assignable'}"><div><strong>${esc(label(row.resource))}</strong><small>${esc(detail)}</small></div>${row.owner==='provider'?`<span class="owner-pill" style="--owner-h:${ownerHue(row.ownerLabel)}">${esc(row.ownerLabel)}</span><span>${icon('check')}</span>`:`<div class="assignment-control"><select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${esc(label(row.resource))}">${person?`<option value="${esc(person.id)}">${esc(person.name)} · ${esc(person.role)}</option>`:''}${personOptions}</select>${person?`<button class="acceptance-toggle ${accepted?'accepted':''}" aria-pressed="${accepted}" data-accept-assignment="${esc(row.id)}" type="button">${accepted?`${icon('check')} Accepted`:'Awaiting acceptance'}</button>`:''}</div>`}</article>`;
   }).join(''):'<article class="responsibility-row empty"><div><strong>Nothing here</strong><small>No responsibilities in this group.</small></div></article>'}</section>`).join('');
   const budget = Number(state.brief.budget) || 0;
   const committed = current?.total || current?.subtotal || 0;
@@ -693,7 +694,7 @@ function renderCoordinatePhase(state) {
   const remaining = state.readiness.responsibilities.filter(row=>row.status==='unresolved').length;
   const deposit=Math.round(committed*(eventOps.ledger.depositRate/100));
   document.querySelector('[data-phase-view="coordinate"]').innerHTML = `${phaseHeader('PHASE 3','Put an owner on every moving part','Build a small event team, distribute the work, and keep the financial handoffs visible.',!!current && remaining===0)}${nextAction(remaining?`Put an owner on ${remaining} remaining responsibilities`:'Check final readiness',remaining?'Assign the remaining work':'Continue to Prepare',remaining?'data-review-assign-all':'data-phase-jump="prepare"')}
-    <section class="team-roster" id="teamRoster"><header><div><span class="kicker">YOUR EVENT TEAM</span><h3>${eventOps.team.length} people coordinating this event</h3></div><button class="quiet-button" data-toggle-add-person>+ Add person</button></header><div class="people-list">${eventOps.team.map(person=>{const ids=Object.entries(eventOps.assignmentPeople).filter(([,id])=>id===person.id).map(([id])=>id);const accepted=ids.filter(id=>eventOps.assignmentAcceptance[id]).length;return `<article><span>${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)} · ${esc(person.contact||'No contact added')}</small></div><b>${ids.length?`${accepted}/${ids.length} accepted`:'No tasks'}</b></article>`}).join('')}</div><form id="addPersonForm" class="add-person-form" hidden><label>Name<input id="newPersonName" required></label><label>Role<input id="newPersonRole" placeholder="Host, coordinator, helper…" required></label><label>Contact<input id="newPersonContact" placeholder="Email or phone"></label><button class="primary-button" type="submit">Add to team</button></form></section>
+    <section class="team-roster" id="teamRoster"><header><div><span class="kicker">YOUR EVENT TEAM</span><h3>${eventOps.team.length} people coordinating this event</h3></div><button class="quiet-button" data-toggle-add-person>+ Add person</button></header><div class="people-list">${eventOps.team.map(person=>{const ids=Object.entries(eventOps.assignmentPeople).filter(([,id])=>id===person.id).map(([id])=>id);const accepted=ids.filter(id=>eventOps.assignmentAcceptance[id]).length;return `<article><span style="--owner-h:${ownerHue(person.name)}">${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)} · ${esc(person.contact||'No contact added')}</small></div><b>${ids.length?`${accepted}/${ids.length} accepted`:'No tasks'}</b></article>`}).join('')}</div><form id="addPersonForm" class="add-person-form" hidden><label>Name<input id="newPersonName" required></label><label>Role<input id="newPersonRole" placeholder="Host, coordinator, helper…" required></label><label>Contact<input id="newPersonContact" placeholder="Email or phone"></label><button class="primary-button" type="submit">Add to team</button></form></section>
     <div class="coordinate-grid"><div class="responsibility-groups">${groupHtml}<section class="custom-task"><header><div><h3>Something else to coordinate?</h3><p>Add décor, music, photography, permits, transport, or any event-specific handoff.</p></div></header><form id="customTaskForm"><input id="customTaskName" placeholder="Add a responsibility" required><input id="customTaskWhen" placeholder="Due time or moment"><select id="customTaskOwner">${personOptions}</select><button class="quiet-button" type="submit">Add task</button></form>${eventOps.customTasks.map(task=>`<article class="responsibility-row"><div><strong>${esc(task.name)}</strong><small>${esc(task.when||'Timing to confirm')} · custom</small></div><span class="owner-pill">${esc(eventOps.team.find(p=>p.id===task.ownerId)?.name||'Unassigned')}</span></article>`).join('')}</section></div><aside><div class="budget-panel"><span>Unallocated budget</span><strong>$${Math.max(0,budget-committed-eventOps.ledger.venue).toLocaleString()}</strong><small>of $${budget.toLocaleString()} working budget</small><div class="budget-bar"><i style="width:${percent}%"></i></div><div class="budget-lines"><div><span>Service package</span><strong>$${committed.toLocaleString()}</strong></div><label><span>Venue estimate</span><input id="venueCost" type="number" min="0" value="${eventOps.ledger.venue||''}" placeholder="Not entered"></label><div><span>Deposit (${eventOps.ledger.depositRate}%)</span><strong>$${deposit.toLocaleString()}</strong></div><label class="payment-check"><span>Deposit status</span><span><input id="depositPaid" type="checkbox" ${eventOps.ledger.depositPaid?'checked':''}> Mark paid for demo</span></label><div><span>Contingency target</span><strong>$${Math.round(budget*.1).toLocaleString()}</strong></div></div><div class="handoff-panel"><strong>Payment handoff not connected</strong><span>Demo statuses never represent a processed payment.</span><button class="quiet-button" data-copy-payment-checklist>Copy payment checklist</button></div></div></aside></div>`;
 }
 
@@ -727,8 +728,8 @@ function renderRunPhase(state) {
     <section class="run-mobile-mode"><span class="kicker">NOW IN THE PLAN</span><div class="run-now"><time>${esc(activeRow.at)}</time><div><h3>${esc(activeRow.action)}</h3><p>${esc(activeRow.owner)} · ${esc(activeRow.evidence)}</p></div></div>${activeRow.key!=='none'?`<button class="primary-button" data-complete-row="${esc(activeRow.key)}">Mark complete</button>`:''}${nextRow?`<div class="run-next"><span>UP NEXT · ${esc(nextRow.at)}</span><strong>${esc(nextRow.action)}</strong></div>`:''}<div class="run-mobile-actions"><button class="quiet-button" data-toggle-run-sheet>${appState.runSheetExpanded?'Hide full run sheet':'View full run sheet'}</button><button class="quiet-button" data-report-issue>Report an issue</button></div></section>
     <section class="run-cover"><div><span>${esc(label(state.brief.eventType))}</span><h3>${esc(state.brief.title)}</h3><p>${esc(formatDate(state.brief.serveAt))} · ${esc(state.brief.venueName)}</p></div><aside><span>EVENTREADY</span><strong>${ready?'Ready to share':'Working draft'}</strong></aside></section>
     <div class="run-banner ${ready?'ready':''}"><strong>${ready?'READY TO SHARE':'DRAFT PLAN'}</strong><span>${ready?'Use this sequence with providers and the event team.':'Resolve remaining decisions before relying on this plan.'}</span><div class="run-actions"><details class="share-menu"><summary class="quiet-button">Share ${icon('chevron')}</summary><div><button type="button" data-copy-run>Copy plan</button><button type="button" data-email-run>Email plan</button></div></details><button class="quiet-button" data-print-run>Print</button></div></div>
-    <div class="run-contacts"><span class="kicker">EVENT TEAM</span>${eventOps.team.map(person=>`<article><span>${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)}</small></div><a href="${person.contact?.includes('@')?'mailto:':'tel:'}${esc(person.contact||'')}">${esc(person.contact||'No contact')}</a></article>`).join('')}</div>
-    <div class="run-table run-sheet ${appState.runSheetExpanded?'expanded':''}">${runSegments(run,state).map(segment=>`<section class="run-segment"><header><span class="kicker">${esc(segment.label)}</span><small>${segment.items.length} item${segment.items.length===1?'':'s'}${segment.window?` · ${esc(segment.window)}`:''}</small></header>${segment.items.map(item=>`<article class="run-row ${eventOps.completedRows[item.key]?'complete':''}"><button class="run-check" data-complete-row="${esc(item.key)}" aria-label="Mark ${esc(item.action)} complete">${icon(eventOps.completedRows[item.key]?'check':'circle')}</button><time>${esc(item.at)}</time><div><h4>${esc(item.action)}</h4><p>${esc(item.meta)}</p></div><span class="run-owner${item.owner==='Unassigned'?' unassigned':''}">${item.owner==='Unassigned'?icon('alert'):''}${esc(item.owner)}</span></article>`).join('')}</section>`).join('')}</div>`;
+    <div class="run-contacts"><span class="kicker">EVENT TEAM</span>${eventOps.team.map(person=>`<article><span style="--owner-h:${ownerHue(person.name)}">${esc(eventMark(person.name))}</span><div><strong>${esc(person.name)}</strong><small>${esc(person.role)}</small></div><a href="${person.contact?.includes('@')?'mailto:':'tel:'}${esc(person.contact||'')}">${esc(person.contact||'No contact')}</a></article>`).join('')}</div>
+    <div class="run-table run-sheet ${appState.runSheetExpanded?'expanded':''}">${runSegments(run,state).map(segment=>`<section class="run-segment"><header><span class="kicker">${esc(segment.label)}</span><small>${segment.items.length} item${segment.items.length===1?'':'s'}${segment.window?` · ${esc(segment.window)}`:''}</small></header>${segment.items.map(item=>`<article class="run-row ${eventOps.completedRows[item.key]?'complete':''}"><button class="run-check" data-complete-row="${esc(item.key)}" aria-label="Mark ${esc(item.action)} complete">${eventOps.completedRows[item.key]?icon('check'):''}</button><time>${esc(item.at)}</time><div><h4>${esc(item.action)}</h4><p>${esc(item.meta)}</p></div><span class="run-owner${item.owner==='Unassigned'?' unassigned':''}"${item.owner==='Unassigned'?'':` style="--owner-h:${ownerHue(item.owner)}"`}>${item.owner==='Unassigned'?icon('alert'):''}${esc(item.owner)}</span></article>`).join('')}</section>`).join('')}</div>`;
 }
 
 // Where a blocker is actually resolved. The engine already tags every finding
@@ -857,7 +858,12 @@ function bindDynamicActions() {
   document.querySelectorAll('[data-edit-shape]').forEach(button => button.onclick = () => { hydrateShapeFields(); renderShape(); showRoute('shape'); });
   document.querySelectorAll('[data-review-option]').forEach(button => button.onclick = () => openProposal(proposalFor('booking',{optionId:button.dataset.reviewOption})));
   document.querySelectorAll('[data-open-package]').forEach(button => button.onclick = () => openPackage(button.dataset.openPackage));
-  document.querySelectorAll('[data-assign-person]').forEach(select => select.onchange = () => { const person=eventOps.team.find(item=>item.id===select.value); if(!person)return; const id=select.dataset.assignPerson;eventOps.assignmentPeople[id]=person.id;eventOps.assignmentAcceptance[id]=false;session.assign(id,'organizer',`${person.name} · ${person.role}`);recordImpact(`${label(session.snapshot().readiness.responsibilities.find(row=>row.id===id)?.resource||'Responsibility')} assigned to ${person.name} · awaiting acceptance.`);persist(); renderWorkspace(session.snapshot()); });
+  document.querySelectorAll('[data-assign-person]').forEach(select => select.onchange = () => { const id0=select.dataset.assignPerson;
+    if(select.value==='not_applicable'){delete eventOps.assignmentPeople[id0];delete eventOps.assignmentAcceptance[id0];
+      session.assign(id0,'not_applicable','Not needed','Set aside for this event');
+      recordImpact(`${label(session.snapshot().readiness.responsibilities.find(row=>row.id===id0)?.resource||'Responsibility')} set aside — not needed for this event.`);
+      persist(); renderWorkspace(session.snapshot()); return;}
+    const person=eventOps.team.find(item=>item.id===select.value); if(!person)return; const id=select.dataset.assignPerson;eventOps.assignmentPeople[id]=person.id;eventOps.assignmentAcceptance[id]=false;session.assign(id,'organizer',`${person.name} · ${person.role}`);recordImpact(`${label(session.snapshot().readiness.responsibilities.find(row=>row.id===id)?.resource||'Responsibility')} assigned to ${person.name} · awaiting acceptance.`);persist(); renderWorkspace(session.snapshot()); });
   document.querySelectorAll('[data-accept-assignment]').forEach(button=>button.onclick=()=>{const id=button.dataset.acceptAssignment;eventOps.assignmentAcceptance[id]=!eventOps.assignmentAcceptance[id];const person=eventOps.team.find(item=>item.id===eventOps.assignmentPeople[id]);recordImpact(`${person?.name||'Owner'} ${eventOps.assignmentAcceptance[id]?'accepted':'reopened'} this responsibility.`);persist();renderWorkspace(session.snapshot());});
   document.querySelectorAll('[data-review-assign-all]').forEach(button => button.onclick = () => openProposal(proposalFor('assignAll')));
   document.querySelectorAll('[data-review-delivery]').forEach(button => button.onclick = () => openProposal(proposalFor('delivery')));
@@ -900,6 +906,31 @@ function runPlanText() {
 // A run of show is read in segments, not as one flat list. The boundaries come
 // from the event's own service time, so a lunch and a late dinner both group
 // sensibly rather than against a hardcoded evening.
+// A stable colour per owner, so Roy, Maya and Cedar House are told apart at a
+// glance instead of all reading as the same purple. Hues are a curated set
+// rather than a raw hash, so two owners never land on near-identical colours,
+// and the pair is a light background with dark text of the same hue, which
+// clears AA at every hue on the wheel.
+const OWNER_HUES = [262, 199, 150, 28, 340, 96, 176, 312];
+let ownerHues = new Map();
+
+// Seeded from the team in order, then handing the next free hue to each new
+// owner as it appears. A hash was doing this and collided twice — Maya with
+// Jordan, then Cedar House with Cedar & Salt Events — which defeats the point.
+// A registry cannot collide until there are more owners than hues.
+function resetOwnerHues() {
+  ownerHues = new Map();
+  eventOps.team.forEach((person, index) => ownerHues.set(person.name, OWNER_HUES[index % OWNER_HUES.length]));
+}
+
+function ownerHue(name) {
+  const key = String(name || '').split(' · ')[0].trim();
+  if (!key) return OWNER_HUES[0];
+  if (!ownerHues.has(key)) ownerHues.set(key, OWNER_HUES[ownerHues.size % OWNER_HUES.length]);
+  return ownerHues.get(key);
+}
+
+
 function runSegments(run, state) {
   const clock = value => { const [h,m] = String(value).slice(11,16).split(':').map(Number);
     return Number.isFinite(h) ? h*60+m : 18*60; };
