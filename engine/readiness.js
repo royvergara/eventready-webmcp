@@ -59,20 +59,28 @@ export function buildResponsibilities(rows = [], assignments = {}) {
       when: row.when || null,
       owner,
       ownerLabel,
-      status: owner === 'unassigned' ? 'unresolved' : (explicit ? 'assigned' : 'covered'),
+      // 'not_applicable' is how a derived obligation is set aside. It is never
+      // deleted — the plan still lists it, with the reason it does not apply —
+      // so nothing the engine derived can silently disappear from the record.
+      status: owner === 'unassigned' ? 'unresolved'
+        : owner === 'not_applicable' ? 'not_applicable'
+        : (explicit ? 'assigned' : 'covered'),
+      reason: explicit?.reason || null,
       evidence: row.source || 'plan'
     };
   });
 }
 
-export function assignResponsibility(assignments = {}, id, owner, ownerLabel = '') {
+export const RESPONSIBILITY_OWNERS = ['organizer', 'volunteer', 'provider', 'not_applicable', 'unassigned'];
+
+export function assignResponsibility(assignments = {}, id, owner, ownerLabel = '', reason = '') {
   if (!id) throw new Error('responsibility id is required');
-  if (!['organizer', 'volunteer', 'provider', 'unassigned'].includes(owner)) {
-    throw new Error('owner must be organizer, volunteer, provider, or unassigned');
+  if (!RESPONSIBILITY_OWNERS.includes(owner)) {
+    throw new Error(`owner must be one of ${RESPONSIBILITY_OWNERS.join(', ')}`);
   }
   const next = { ...assignments };
   if (owner === 'unassigned') delete next[id];
-  else next[id] = { owner, ownerLabel: ownerLabel || owner };
+  else next[id] = { owner, ownerLabel: ownerLabel || owner, ...(reason ? { reason } : {}) };
   return next;
 }
 

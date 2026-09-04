@@ -860,7 +860,7 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .run-sheet .run-segment>header small{color:var(--muted);font-family:var(--mono);font-size:.6rem}
 /* the spine runs between the first and last marker of the segment, and the check
    buttons are the markers, so completing an item marks the timeline itself */
-.run-sheet .run-segment::before{content:"";position:absolute;z-index:0;left:2rem;top:3.3rem;bottom:1.7rem;width:1px;background:var(--line)}
+.run-sheet .run-row:not(:last-child)::before{content:"";position:absolute;z-index:0;left:2rem;top:2.6rem;bottom:-.8rem;width:1px;background:var(--line)}
 .run-sheet .run-row{position:relative;z-index:1;border-bottom:0;align-items:start}
 .run-sheet .run-check{justify-self:center;flex:none}
 .run-sheet .run-row time{align-self:center;color:var(--ink);font-family:var(--mono);font-size:.66rem;font-weight:600;text-align:right}
@@ -924,7 +924,7 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
   .run-table,.run-sheet{display:block!important;border:0;border-radius:0;background:none;box-shadow:none;margin:0;overflow:visible}
   .run-sheet .run-segment{position:static;padding:0 0 5mm;break-inside:auto}
   .run-sheet .run-segment+.run-segment{border-top:0;padding-top:4mm}
-  .run-sheet .run-segment::before{display:none}
+  .run-sheet .run-row::before{display:none}
   .run-sheet .run-segment>header{display:flex;padding:0 0 1.5mm;margin:0 0 2mm;border-bottom:.75pt solid #111;break-after:avoid}
   .run-sheet .run-segment>header .kicker{color:#111;font-size:8.5pt;font-weight:700;letter-spacing:.14em}
   .run-sheet .run-segment>header small{color:#555;font-size:8pt}
@@ -997,3 +997,21 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .generating-steps li.done{color:var(--muted)}
 .generating-steps li.done>span{color:var(--green)}
 @media(prefers-reduced-motion:reduce){.generating-track>i{transition:none}}
+
+/* --- one colour per owner ------------------------------------------------- */
+/* Every chip was the same purple, so a sheet of thirteen rows said nothing about
+   who held what. --owner-h is set per element from the owner's name, and the
+   pair is always a very light background with dark text of that same hue, which
+   holds well above AA whichever hue is drawn. */
+.run-sheet .run-owner[style*="--owner-h"]{background:hsl(var(--owner-h) 62% 93%);color:hsl(var(--owner-h) 58% 26%)}
+.owner-pill[style*="--owner-h"]{justify-self:start;width:max-content;background:hsl(var(--owner-h) 62% 93%);color:hsl(var(--owner-h) 58% 26%)}
+.people-list article>span[style*="--owner-h"],
+.run-contacts article>span[style*="--owner-h"]{background:hsl(var(--owner-h) 62% 92%);color:hsl(var(--owner-h) 58% 26%)}
+@media print{
+  .run-sheet .run-owner[style*="--owner-h"]{background:none!important;color:#111!important}
+  .run-contacts article>span[style*="--owner-h"]{background:none!important;color:#111!important}
+}
+
+/* the printed masthead belongs to paper only */
+.run-print-head{display:none}
+.run-sheet .run-check{display:grid;place-items:center;color:var(--green)}
