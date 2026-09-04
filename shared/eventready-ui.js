@@ -734,57 +734,66 @@ function mutateActiveBasket(change) {
 }
 
 function ownerOptions(selectedId, includeSetAside) {
-  const none = `<option value=""${selectedId ? '' : ' selected'}>Choose owner\u2026</option>`;
+  const none = `<option value=""${selectedId ? '' : ' selected'}>Assign to\u2026</option>`;
   const people = eventOps.team.map(person =>
     `<option value="${esc(person.id)}"${person.id === selectedId ? ' selected' : ''}>${esc(person.name)} \u00b7 ${esc(person.role)}</option>`).join('');
   return none + people + (includeSetAside ? '<option value="not_applicable">Not needed for this event</option>' : '');
 }
 
-function rowState(owned) {
-  return owned
-    ? `<span class="row-state">${icon('check')}</span>`
-    : `<span class="row-state needs">${icon('alert')} Needs an owner</span>`;
+function ownershipCard(parts) {
+  const { id, name, meta, kind, control } = parts;
+  return `<article class="ownership-card ${kind}" data-card="${esc(id)}"><div class="ownership-what"><strong>${esc(name)}</strong><small>${esc(meta)}</small></div>${control}</article>`;
 }
 
-function renderResponsibilityRow(row) {
-  const name = esc(label(row.resource));
-  const when = esc(row.when || 'Timing to confirm');
-  if (row.owner === 'provider') {
-    const pill = `<span class="owner-pill" style="--owner-h:${ownerHue(row.ownerLabel)}">${esc(row.ownerLabel)}</span>`;
-    return `<article class="responsibility-row provider-owned"><div><strong>${name}</strong><small>${when} \u00b7 ${esc(row.evidence)}</small></div>${pill}<span class="row-state">${icon('check')}</span></article>`;
-  }
-  // Set aside, not removed. engine/readiness.js keeps the row on the record
-  // deliberately; this is the screen that has to show it is still there.
-  if (row.status === 'not_applicable') {
-    const undo = `<button class="link-button" data-restore-responsibility="${esc(row.id)}" type="button">Undo</button>`;
-    return `<article class="responsibility-row set-aside"><div><strong>${name}</strong><small>${esc(row.reason || 'Not needed for this event')}</small></div><span class="owner-pill set-aside-pill">Set aside</span>${undo}</article>`;
-  }
-  const owned = row.status !== 'unresolved';
-  const select = `<select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${name}">${ownerOptions(eventOps.assignmentPeople[row.id], true)}</select>`;
-  return `<article class="responsibility-row assignable${owned ? '' : ' unowned'}"><div><strong>${name}</strong><small>${when}</small></div>${select}${rowState(owned)}</article>`;
-}
-
-function renderCustomTaskRow(task, index) {
-  const name = esc(task.name);
-  const select = `<select class="assignment-select" data-assign-custom="${index}" aria-label="Assign ${name}">${ownerOptions(task.ownerId, false)}</select>`;
-  return `<article class="responsibility-row assignable${task.ownerId ? '' : ' unowned'}"><div><strong>${name}</strong><small>${esc(task.when || 'Timing to confirm')} \u00b7 custom</small></div>${select}${rowState(!!task.ownerId)}</article>`;
+function unassignButton(id, name) {
+  return `<button class="unassign-button" data-unassign="${esc(id)}" type="button" aria-label="Move ${esc(name)} back to needs an owner" title="Move back to Needs an owner">${icon('back')}</button>`;
 }
 
 function renderCoordinatePhase(state) {
   const current = currentBooking(state);
   const rows = state.readiness.responsibilities;
+  const domainLabel = Object.fromEntries(state.readiness.domains.map(domain => [domain.id, domain.label]));
+  const open = [];
+  const settled = [];
 
-  // Grouped by what the work is, not by who currently owns it. Ownership is the
-  // thing you are changing on this screen; grouping by it meant every row you
-  // touched jumped to a different list. The domain does not move, so the row
-  // stays under the cursor and the group header keeps the score.
-  const groupHtml = state.readiness.domains.map(domain => {
-    const domainRows = rows.filter(row => row.domain === domain.id);
-    if (!domainRows.length) return '';
-    const owned = domainRows.filter(row => row.status !== 'unresolved').length;
-    const header = `<header><h3>${esc(domain.label)}</h3><span>${owned} of ${domainRows.length} owned</span></header>`;
-    return `<section class="responsibility-group${owned === domainRows.length ? ' complete' : ''}">${header}${domainRows.map(renderResponsibilityRow).join('')}</section>`;
-  }).join('');
+  // Two columns, and the crossing between them is the whole point: work starts
+  // on the left with no owner and lands on the right once it has one. Rows move
+  // here because the move is the progress, unlike grouping by owner, where a
+  // row changed column for no reason the eye could use.
+  for (const row of rows) {
+    const name = label(row.resource);
+    const meta = `${row.when || 'Timing to confirm'} \u00b7 ${domainLabel[row.domain] || row.domain}`;
+    if (row.owner === 'provider') {
+      settled.push(ownershipCard({ id: row.id, name, meta, kind: 'provider',
+        control: `<div class="ownership-who"><span class="owner-pill" style="--owner-h:${ownerHue(row.ownerLabel)}">${esc(row.ownerLabel)}</span><small class="owner-note">Provider commitment</small></div>` }));
+      continue;
+    }
+    if (row.status === 'not_applicable') {
+      settled.push(ownershipCard({ id: row.id, name, meta, kind: 'set-aside',
+        control: `<div class="ownership-who"><span class="owner-pill set-aside-pill">Set aside</span><small class="owner-note">${esc(row.reason || 'Not needed for this event')}</small></div>${unassignButton(row.id, name)}` }));
+      continue;
+    }
+    const select = `<select class="assignment-select" data-assign-person="${esc(row.id)}" aria-label="Assign ${esc(name)}">${ownerOptions(eventOps.assignmentPeople[row.id], true)}</select>`;
+    if (row.status === 'unresolved') {
+      open.push(ownershipCard({ id: row.id, name, meta, kind: 'open', control: select }));
+    } else {
+      settled.push(ownershipCard({ id: row.id, name, meta, kind: 'owned', control: `${select}${unassignButton(row.id, name)}` }));
+    }
+  }
+
+  eventOps.customTasks.forEach((task, index) => {
+    const select = `<select class="assignment-select" data-assign-custom="${index}" aria-label="Assign ${esc(task.name)}">${ownerOptions(task.ownerId, false)}</select>`;
+    const card = { id: `custom-${index}`, name: task.name, meta: `${task.when || 'Timing to confirm'} \u00b7 added by you` };
+    if (task.ownerId) settled.push(ownershipCard({ ...card, kind: 'owned', control: `${select}${unassignButton(`custom-${index}`, task.name)}` }));
+    else open.push(ownershipCard({ ...card, kind: 'open', control: select }));
+  });
+
+  const emptyOpen = '<p class="column-empty">Every responsibility has an owner.</p>';
+  const emptySettled = '<p class="column-empty">Assign something on the left and it lands here.</p>';
+  const board = `<div class="ownership-board">
+      <section class="ownership-column needs"><header><h3>${icon('alert')} Needs an owner</h3><span>${open.length}</span></header><div class="ownership-stack">${open.length ? open.join('') : emptyOpen}</div></section>
+      <section class="ownership-column done"><header><h3>${icon('check')} Assigned</h3><span>${settled.length}</span></header><div class="ownership-stack">${settled.length ? settled.join('') : emptySettled}</div></section>
+    </div>`;
 
   const roster = eventOps.team.map(person => {
     const count = Object.values(eventOps.assignmentPeople).filter(id => id === person.id).length
@@ -803,7 +812,8 @@ function renderCoordinatePhase(state) {
 
   document.querySelector('[data-phase-view="coordinate"]').innerHTML = `${phaseHeader('PHASE 3','Put an owner on every moving part','Build a small event team, distribute the work, and keep the financial handoffs visible.',!!current && remaining===0)}${nextAction(remaining?`Put an owner on ${remaining} remaining responsibilities`:'Check final readiness',remaining?assignLabel:'Continue to Prepare',remaining?'data-review-assign-all':'data-phase-jump="prepare"')}
     <section class="team-roster" id="teamRoster"><header><div><span class="kicker">YOUR EVENT TEAM</span><h3>${eventOps.team.length} people coordinating this event</h3></div><button class="quiet-button" data-toggle-add-person>+ Add person</button></header><div class="people-list">${roster}</div><form id="addPersonForm" class="add-person-form" hidden><label>Name<input id="newPersonName" required></label><label>Role<input id="newPersonRole" placeholder="Host, coordinator, helper\u2026" required></label><label>Contact<input id="newPersonContact" placeholder="Email or phone"></label><button class="primary-button" type="submit">Add to team</button></form></section>
-    <div class="coordinate-grid"><div class="responsibility-groups">${groupHtml}<section class="custom-task"><header><div><h3>Something else to coordinate?</h3><p>Add d\u00e9cor, music, photography, permits, transport, or any event-specific handoff.</p></div></header><form id="customTaskForm"><input id="customTaskName" placeholder="Add a responsibility" required><input id="customTaskWhen" placeholder="Due time or moment"><select id="customTaskOwner">${ownerOptions('', false)}</select><button class="quiet-button" type="submit">Add task</button></form>${eventOps.customTasks.map(renderCustomTaskRow).join('')}</section></div><aside><div class="budget-panel"><span>Unallocated budget</span><strong>$${Math.max(0,budget-committed-eventOps.ledger.venue).toLocaleString()}</strong><small>of $${budget.toLocaleString()} working budget</small><div class="budget-bar"><i style="width:${percent}%"></i></div><div class="budget-lines"><div><span>Service package</span><strong>$${committed.toLocaleString()}</strong></div><label><span>Venue estimate</span><input id="venueCost" type="number" min="0" value="${eventOps.ledger.venue||''}" placeholder="Not entered"></label><div><span>Deposit (${eventOps.ledger.depositRate}%)</span><strong>$${deposit.toLocaleString()}</strong></div><label class="payment-check"><span>Deposit status</span><span><input id="depositPaid" type="checkbox" ${eventOps.ledger.depositPaid?'checked':''}> Mark paid for demo</span></label><div><span>Contingency target</span><strong>$${Math.round(budget*.1).toLocaleString()}</strong></div></div><div class="handoff-panel"><strong>Payment handoff not connected</strong><span>Demo statuses never represent a processed payment.</span><button class="quiet-button" data-copy-payment-checklist>Copy payment checklist</button></div></div></aside></div>`;
+    ${board}
+    <div class="coordinate-grid"><section class="custom-task"><header><div><h3>Something else to coordinate?</h3><p>Add d\u00e9cor, music, photography, permits, transport, or any event-specific handoff. It joins the board on the left until you give it an owner.</p></div></header><form id="customTaskForm"><input id="customTaskName" placeholder="Add a responsibility" required><input id="customTaskWhen" placeholder="Due time or moment"><select id="customTaskOwner">${ownerOptions('', false)}</select><button class="quiet-button" type="submit">Add task</button></form></section><aside><div class="budget-panel"><span>Unallocated budget</span><strong>$${Math.max(0,budget-committed-eventOps.ledger.venue).toLocaleString()}</strong><small>of $${budget.toLocaleString()} working budget</small><div class="budget-bar"><i style="width:${percent}%"></i></div><div class="budget-lines"><div><span>Service package</span><strong>$${committed.toLocaleString()}</strong></div><label><span>Venue estimate</span><input id="venueCost" type="number" min="0" value="${eventOps.ledger.venue||''}" placeholder="Not entered"></label><div><span>Deposit (${eventOps.ledger.depositRate}%)</span><strong>$${deposit.toLocaleString()}</strong></div><label class="payment-check"><span>Deposit status</span><span><input id="depositPaid" type="checkbox" ${eventOps.ledger.depositPaid?'checked':''}> Mark paid for demo</span></label><div><span>Contingency target</span><strong>$${Math.round(budget*.1).toLocaleString()}</strong></div></div><div class="handoff-panel"><strong>Payment handoff not connected</strong><span>Demo statuses never represent a processed payment.</span><button class="quiet-button" data-copy-payment-checklist>Copy payment checklist</button></div></div></aside></div>`;
 }
 
 function renderPreparePhase(state) {
@@ -970,7 +980,11 @@ function bindDynamicActions() {
       recordImpact(`${label(session.snapshot().readiness.responsibilities.find(row=>row.id===id0)?.resource||'Responsibility')} set aside — not needed for this event.`);
       persist(); renderWorkspace(session.snapshot()); return;}
     const person=eventOps.team.find(item=>item.id===select.value); if(!person)return; const id=select.dataset.assignPerson;eventOps.assignmentPeople[id]=person.id;session.assign(id,'organizer',`${person.name} · ${person.role}`);recordImpact(`${label(session.snapshot().readiness.responsibilities.find(row=>row.id===id)?.resource||'Responsibility')} assigned to ${person.name}.`);persist(); renderWorkspace(session.snapshot()); });
-  document.querySelectorAll('[data-restore-responsibility]').forEach(button=>button.onclick=()=>{const id=button.dataset.restoreResponsibility;const name=label(session.snapshot().readiness.responsibilities.find(row=>row.id===id)?.resource||'Responsibility');session.assign(id,'unassigned');recordImpact(`${name} put back \u2014 it needs an owner again.`);persist();renderWorkspace(session.snapshot());});
+  document.querySelectorAll('[data-unassign]').forEach(button=>button.onclick=()=>{const id=button.dataset.unassign;
+    if(id.startsWith('custom-')){const task=eventOps.customTasks[Number(id.slice(7))];if(!task)return;task.ownerId='';recordImpact(`${task.name} moved back \u2014 it needs an owner.`);persist();renderWorkspace(session.snapshot());return;}
+    const name=label(session.snapshot().readiness.responsibilities.find(row=>row.id===id)?.resource||'Responsibility');
+    delete eventOps.assignmentPeople[id]; session.assign(id,'unassigned');
+    recordImpact(`${name} moved back \u2014 it needs an owner.`); persist(); renderWorkspace(session.snapshot());});
   document.querySelectorAll('[data-assign-custom]').forEach(select=>select.onchange=()=>{const task=eventOps.customTasks[Number(select.dataset.assignCustom)];if(!task)return;task.ownerId=select.value;const person=eventOps.team.find(item=>item.id===select.value);recordImpact(person?`${task.name} assigned to ${person.name}.`:`${task.name} has no owner.`);persist();renderWorkspace(session.snapshot());});
   document.querySelectorAll('[data-review-assign-all]').forEach(button => button.onclick = () => openProposal(proposalFor('assignAll')));
   document.querySelectorAll('[data-review-delivery]').forEach(button => button.onclick = () => openProposal(proposalFor('delivery')));
