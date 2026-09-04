@@ -7,15 +7,18 @@
      have seen before, and this has to be switched off before it decides to. A module
      script is deferred, so setting it there is already too late. -->
 <script>history.scrollRestoration = 'manual';</script>
-<title>Planner · Catering WebMCP</title>
+<title>Technical planner · EventReady WebMCP</title>
 <link rel="stylesheet" href="/shared/fonts.css">
 <link rel="stylesheet" href="/shared/tailwind.css">
 <link rel="stylesheet" href="/shared/ui.css">
+<link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
-<body class="font-sans">
+<body class="font-sans technical-body">
 <div id="siteHeader"></div>
 
-<main class="mx-auto max-w-3xl px-5 py-8">
+<div class="docs-reference-shell">
+<aside id="docsSidebar"></aside>
+<main class="technical-main">
   <div class="sheethead">
     <div class="sheethead-band">
       <p class="kicker"><span class="kicker-no">02</span>Planner</p>
@@ -132,6 +135,7 @@
     <div class="chit-body"><pre id="log" class="readout">no calls yet</pre></div>
   </section>
 </main>
+</div>
 
 <script>
 window.addEventListener('error', e => {
@@ -149,9 +153,10 @@ import { parseOccasion, assemblePlan, revisePlan, replan, buildOptions, ownershi
 import { runChecks } from '/engine/engine.js';
 import { CHECKS as CHECK_LABELS } from '/engine/replan.js';
 import { toolHost } from '/shared/webmcp.js';
-import { mountHeader, badge, tierBadge, money, label, esc } from '/shared/ui.js';
+import { mountHeader, mountDocsSidebar, badge, tierBadge, money, label, esc } from '/shared/ui.js';
 
-mountHeader('Planner');
+mountHeader('Technical planner');
+mountDocsSidebar('Technical planner');
 
 // never rely on implicit id globals: `status`, `name`, `length` are window built-ins
 const $ = id => document.getElementById(id);

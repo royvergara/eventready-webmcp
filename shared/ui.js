@@ -1,21 +1,4 @@
 // Shared UI helpers so every page uses the same patterns.
-const NAV = [
-  { href: '/', label: 'EventReady' },
-  { href: '/judge.html', label: 'Judge Mode' },
-  { href: '/plan.html', label: 'Legacy planner' },
-  { href: '/gradient.html', label: 'Source gradient' },
-  { href: '/harness.html', label: 'Tool harness' },
-  { href: '/smoke.html', label: 'Smoke test' }
-];
-
-const link = (n, active, mobile) => {
-  const on = n.label === active;
-  const cur = on ? ' aria-current="page"' : '';
-  return mobile
-    ? `<a href="${n.href}"${cur}>${n.label}</a>`
-    : `<a href="${n.href}" class="navlink"${cur}>${n.label}</a>`;
-};
-
 // Open at the top. The real work is done by the inline script in every page's
 // <head>: scroll restoration has to be switched off before the browser decides to
 // restore, and a module script is deferred, so doing it from here was always too
@@ -32,46 +15,64 @@ export function mountHeader(active) {
   const el = document.getElementById('siteHeader');
   if (!el) return;
 
-  // The mark is set the way the pages set everything else: the name in the display
-  // face, the protocol stamped in mono. On a phone the nav collapses, so the space
-  // it leaves carries the name of the sheet you are on rather than going blank.
-  el.innerHTML = `
-    <header class="masthead">
-      <div class="masthead-inner">
-        <a href="/" class="mark" aria-label="EventReady WebMCP, home">
-          <span class="mark-name">EVENTREADY</span><span class="mark-dot">·</span><span class="mark-code">WEBMCP</span>
-        </a>
-
-        <nav class="ml-auto hidden sm:flex gap-4" aria-label="Sections">
-          ${NAV.map(n => link(n, active, false)).join('')}
-        </nav>
-
-        <span class="masthead-where sm:hidden">${esc(active || '')}</span>
-        <button id="navToggle" class="menu-btn sm:hidden" aria-expanded="false" aria-controls="navPanel">Menu</button>
-      </div>
-
-      <div id="navPanel" class="navpanel sm:hidden" hidden>
-        <nav aria-label="Sections">${NAV.map(n => link(n, active, true)).join('')}</nav>
-      </div>
-    </header>`;
-
-  const btn = document.getElementById('navToggle');
-  const panel = document.getElementById('navPanel');
-
-  const set = open => {
-    panel.hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    btn.textContent = open ? 'Close' : 'Menu';
-  };
-  btn.addEventListener('click', () => set(panel.hidden));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden) { set(false); btn.focus(); } });
-  window.addEventListener('resize', () => { if (window.innerWidth >= 640 && !panel.hidden) set(false); });
+  el.innerHTML = docsHeader(active);
 
   // Sit flush on the sheet until there is something underneath to lift off. The
   // shadow goes on the wrapper, which is the element that actually sticks.
-  const lift = () => el.classList.toggle('lifted', window.scrollY > 4);
-  lift();
-  window.addEventListener('scroll', lift, { passive: true });
+}
+
+const docsDestinations = [
+  { label: 'Overview', href: '/developers.html', pages: ['Overview', 'Documentation'] },
+  { label: 'Tool reference', href: '/harness.html', pages: ['Tool harness', 'Technical planner'] },
+  { label: 'Source quality', href: '/gradient.html', pages: ['Source gradient', 'Vendor site'] },
+  { label: 'Verification', href: '/judge.html', pages: ['Judge Mode', 'Discovery check'] }
+];
+
+function docsHeader(active) {
+  const links = docsDestinations.map(item => {
+    const current = item.pages.includes(active);
+    return `<a href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.label}</a>`;
+  }).join('');
+
+  return `
+    <header class="docs-site-header">
+      <div class="docs-site-topline">
+        <a class="site-brand" href="/developers.html" aria-label="EventReady WebMCP documentation home">
+          <strong><span>Event</span>Ready</strong><i aria-hidden="true"></i><small>WebMCP docs</small>
+        </a>
+        <a class="docs-product-link" href="/">EventReady app <span aria-hidden="true">↗</span></a>
+      </div>
+      <nav class="docs-site-nav" aria-label="WebMCP documentation">
+        ${links}
+      </nav>
+    </header>`;
+}
+
+export function mountDocsHeader(active) {
+  openAtTop();
+  const el = document.getElementById('siteHeader');
+  if (el) el.innerHTML = docsHeader(active);
+}
+
+const referenceDestinations = [
+  { label: 'Tool contracts', href: '/developers.html#tool-contracts', pages: ['Tool contracts'] },
+  { label: 'Tool harness', href: '/harness.html', pages: ['Tool harness'] },
+  { label: 'Discovery check', href: '/smoke.html', pages: ['Discovery check'] },
+  { label: 'Source quality', href: '/gradient.html', pages: ['Source gradient'] },
+  { label: 'Technical planner', href: '/plan.html', pages: ['Technical planner'] }
+];
+
+export function mountDocsSidebar(active) {
+  const el = document.getElementById('docsSidebar');
+  if (!el) return;
+  const links = referenceDestinations.map(item => {
+    const current = item.pages.includes(active);
+    return `<a href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.label}</a>`;
+  }).join('');
+  el.className = 'docs-reference-nav';
+  el.setAttribute('aria-label', 'WebMCP reference');
+  el.innerHTML = `<nav><span>WebMCP reference</span>${links}</nav>
+    <div><span>Environment</span><strong><i></i> Production demo</strong><small>No credentials required</small></div>`;
 }
 
 export const badge = (kind, text) => `<span class="badge badge-${kind}">${text}</span>`;

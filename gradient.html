@@ -7,15 +7,18 @@
      have seen before, and this has to be switched off before it decides to. A module
      script is deferred, so setting it there is already too late. -->
 <script>history.scrollRestoration = 'manual';</script>
-<title>Source gradient · Catering WebMCP</title>
+<title>Source quality · EventReady WebMCP</title>
 <link rel="stylesheet" href="/shared/fonts.css">
 <link rel="stylesheet" href="/shared/tailwind.css">
 <link rel="stylesheet" href="/shared/ui.css">
+<link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
-<body class="font-sans">
+<body class="font-sans technical-body">
 <div id="siteHeader"></div>
 
-<main class="mx-auto max-w-3xl px-5 py-8">
+<div class="docs-reference-shell">
+<aside id="docsSidebar"></aside>
+<main class="technical-main">
   <div class="sheethead">
     <div class="sheethead-band">
       <p class="kicker"><span class="kicker-no">03</span>Source gradient</p>
@@ -73,6 +76,7 @@
     <div class="chit-body"><pre id="log" class="readout">no calls yet</pre></div>
   </section>
 </main>
+</div>
 
 <script>
 window.addEventListener('error', e => {
@@ -90,9 +94,10 @@ import {
   TIERS, CAPABILITIES, can, readT0, readT1, readT2, readT3, draftInquiry, askEveryTier
 } from '/engine/adapters.js';
 import { toolHost } from '/shared/webmcp.js';
-import { mountHeader, badge, tierBadge, money, esc } from '/shared/ui.js';
+import { mountHeader, mountDocsSidebar, badge, tierBadge, money, esc } from '/shared/ui.js';
 
 mountHeader('Source gradient');
+mountDocsSidebar('Source gradient');
 
 // never rely on implicit id globals: `status`, `name`, `length` are window built-ins
 const $ = id => document.getElementById(id);
