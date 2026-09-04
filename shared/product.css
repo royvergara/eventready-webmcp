@@ -1065,11 +1065,11 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 /* Phase rail. Three states that have to be told apart without reading:
    complete carries a check, current carries a haloed numeral, and everything
    still ahead is a plain outline. Colour alone never carries it. */
-.phase-rail button{grid-template-columns:2rem 1fr .9rem}
+.phase-rail button{grid-template-columns:2rem 1fr}
 .phase-rail button>span{border:1.5px solid var(--line);background:#fff;color:var(--muted)}
 .phase-rail button>span .icon{width:.95rem;height:.95rem}
 .phase-rail button.active>span{border-color:var(--accent);background:#fff;color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
-.phase-rail button.done>span{border-color:var(--accent);background:var(--accent);color:#fff}
+.phase-rail button.done>span{border-color:var(--status-ready);background:var(--status-ready);color:#fff}
 .phase-rail button.active.done>span{box-shadow:0 0 0 4px var(--accent-soft)}
 .phase-rail button strong{color:var(--muted)}
 .phase-rail button.done strong,.phase-rail button.active strong{color:var(--ink)}
@@ -1081,14 +1081,16 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .phase-rail button:not(:first-child)::after,.phase-rail button:not(:last-child)::before{content:"";position:absolute;z-index:0;left:calc(1.625rem - 1px);width:2px;background:var(--line)}
 .phase-rail button:not(:first-child)::after{top:0;bottom:calc(50% + 1.05rem)}
 .phase-rail button:not(:last-child)::before{top:calc(50% + 1.05rem);bottom:0}
-.phase-rail button.done::before{background:var(--accent)}
-.phase-rail button.done+button::after{background:var(--accent)}
+.phase-rail button.done::before{background:var(--status-ready)}
+.phase-rail button.done+button::after{background:var(--status-ready)}
 /* Affordance: the row is a control, so it says so on hover and where you are. */
-.phase-rail button>i,.phase-rail button.active>i,.phase-rail button.done>i{width:auto;height:auto;border-radius:0;background:none}
-.phase-rail button>i{color:var(--muted);opacity:0}
-.phase-rail button>i .icon{width:.85rem;height:.85rem}
+.phase-rail button>i{display:none}
 .phase-rail button:hover>i,.phase-rail button:focus-visible>i,.phase-rail button.active>i{opacity:1}
 .phase-rail button.active>i{color:var(--accent)}
 @media(max-width:1279px){
   .phase-rail button::before,.phase-rail button::after{display:none}
 }
+.phase-rail button.done small{color:var(--status-ready);font-weight:700}
+.phase-rail button.active small{color:var(--accent);font-weight:700}
+.phase-rail button.active.done>span{border-color:var(--status-ready);background:var(--status-ready);box-shadow:0 0 0 4px var(--accent-soft)}
+.phase-rail button.active.done small{color:var(--status-ready)}
