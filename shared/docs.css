@@ -9,7 +9,7 @@
    this file — .docs-sidebar lost its right border, .docs-toc its left, headings
    their margins — while index.html, which links product.css directly, kept all of
    them. One stylesheet behaving two ways is what let these pages drift apart. */
-@import url('/shared/product.css?v=50');
+@import url('/shared/product.css?v=51');
 
 :root{
   --docs-header-height:7.5rem;
