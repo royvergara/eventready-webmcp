@@ -18,7 +18,7 @@
   --ink:#161a31;--muted:#686b7c;--soft:#9899a5;--line:#dedbd5;
   --canvas:#f7f5f1;--surface:#fffdf9;--surface-2:#f1eee8;--navy:#161a31;
   --blue:#6556d8;--blue-soft:#eeebff;--accent:#6556d8;--accent-soft:#eeebff;
-  --coral:#b64f44;--coral-soft:#f9e9e6;--green:#287665;--green-soft:#e7f2ee;
+  --coral:#b64f44;--coral-soft:#f9e9e6;--green:#1d7a5f;--green-soft:#e7f2ee;
   --amber:#85621d;--amber-soft:#f6eedb;--champagne:#e8dcc6;
   --shadow:0 26px 80px rgba(22,26,49,.10)
 }
@@ -288,7 +288,7 @@ html{background:var(--canvas)}.app-header{background:rgba(248,247,244,.94)}.bran
 @media(max-width:767px){.start-view::before,.start-view::after{display:none}.start-copy h1{font-size:3.25rem}.output-grid::after{display:none}.run-cover{align-items:flex-start;flex-direction:column}.run-cover aside{text-align:left}.phase-rail::before{display:none}}
 
 /* Final signature overrides intentionally follow the legacy component layer. */
-:root{--ink:#161a31;--muted:#686b7c;--soft:#9899a5;--line:#dedbd5;--canvas:#f7f5f1;--surface:#fffdf9;--surface-2:#f1eee8;--navy:#161a31;--blue:#6556d8;--blue-soft:#eeebff;--accent:#6556d8;--accent-soft:#eeebff;--coral:#b64f44;--coral-soft:#f9e9e6;--green:#287665;--green-soft:#e7f2ee;--amber:#85621d;--amber-soft:#f6eedb;--champagne:#e8dcc6;--shadow:0 26px 80px rgba(22,26,49,.10)}
+:root{--ink:#161a31;--muted:#686b7c;--soft:#9899a5;--line:#dedbd5;--canvas:#f7f5f1;--surface:#fffdf9;--surface-2:#f1eee8;--navy:#161a31;--blue:#6556d8;--blue-soft:#eeebff;--accent:#6556d8;--accent-soft:#eeebff;--coral:#b64f44;--coral-soft:#f9e9e6;--green:#1d7a5f;--green-soft:#e7f2ee;--amber:#85621d;--amber-soft:#f6eedb;--champagne:#e8dcc6;--shadow:0 26px 80px rgba(22,26,49,.10)}
 body[data-event-type="wedding"]{--accent:#745bc6;--accent-soft:#efeafe}body[data-event-type="work-event"]{--accent:#426da9;--accent-soft:#e8f0fa}body[data-event-type="celebration"]{--accent:#9a6c27;--accent-soft:#f6eddc}body[data-event-type="community-event"]{--accent:#327968;--accent-soft:#e6f1ed}
 body{background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(22,26,49,.018) 50%,transparent calc(50% + .5px)),var(--canvas)}
 .app-header{height:5rem;border-bottom:1px solid rgba(22,26,49,.12);background:rgba(247,245,241,.92)}
@@ -1069,7 +1069,7 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .phase-rail button>span{border:1.5px solid var(--line);background:#fff;color:var(--muted)}
 .phase-rail button>span .icon{width:.95rem;height:.95rem}
 .phase-rail button.active>span{border-color:var(--accent);background:#fff;color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
-.phase-rail button.done>span{border-color:var(--status-ready);background:var(--status-ready);color:#fff}
+.phase-rail button.done>span{border-color:color-mix(in srgb,var(--status-ready) 38%,transparent);background:var(--green-soft);color:var(--status-ready)}
 .phase-rail button.active.done>span{box-shadow:0 0 0 4px var(--accent-soft)}
 .phase-rail button strong{color:var(--muted)}
 .phase-rail button.done strong,.phase-rail button.active strong{color:var(--ink)}
@@ -1090,7 +1090,11 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 @media(max-width:1279px){
   .phase-rail button::before,.phase-rail button::after{display:none}
 }
-.phase-rail button.done small{color:var(--status-ready);font-weight:700}
-.phase-rail button.active small{color:var(--accent);font-weight:700}
-.phase-rail button.active.done>span{border-color:var(--status-ready);background:var(--status-ready);box-shadow:0 0 0 4px var(--accent-soft)}
-.phase-rail button.active.done small{color:var(--status-ready)}
+/* The state reads as a chip, the way every other status in the product does.
+   A heavy filled disc was what made "complete" look muddy -- the hue was only
+   half of it. */
+.phase-rail button small{color:var(--status-confirm);font-weight:700}
+.phase-rail button.done small{color:var(--status-ready)}
+/* `.phase-rail button.active.done>span{color:#fff}` earlier in the file would
+   put a white check on the pale disc; say otherwise. */
+.phase-rail button.active.done>span{border-color:color-mix(in srgb,var(--status-ready) 38%,transparent);background:var(--green-soft);color:var(--status-ready);box-shadow:0 0 0 4px var(--accent-soft)}
