@@ -149,6 +149,15 @@
     </section>
   </div>
 
+  <div id="generatingOverlay" class="overlay" hidden>
+    <section class="proposal-sheet generating-sheet" role="dialog" aria-modal="true" aria-labelledby="generatingTitle" tabindex="-1">
+      <header><div><span class="kicker">BUILDING YOUR PLAN</span><h2 id="generatingTitle">Composing the event plan</h2></div></header>
+      <p>Reading the brief against every provider contract, then checking what the resulting plan does and does not cover.</p>
+      <div class="generating-track"><i id="generatingBar"></i></div>
+      <ol id="generatingSteps" class="generating-steps" aria-live="polite"></ol>
+    </section>
+  </div>
+
   <div id="planReadyOverlay" class="overlay" hidden>
     <section class="proposal-sheet plan-ready-sheet" role="dialog" aria-modal="true" aria-labelledby="planReadyTitle" tabindex="-1">
       <header><div><span class="kicker">WORKSPACE CREATED</span><h2 id="planReadyTitle">Your event has a working plan.</h2></div></header>
