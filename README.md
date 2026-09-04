@@ -62,7 +62,7 @@ engine/trust.js            provider data allowlist and injection quarantine
 data/event + data/venues   canonical wedding and venue contracts
 data/vendors               eight provider reference contracts
 harness / gradient / smoke technical WebMCP evidence
-engine/*.test.mjs          204 tests
+engine/*.test.mjs          209 tests
 ```
 
 ## What changed for this entry

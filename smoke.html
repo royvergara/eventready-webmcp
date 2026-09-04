@@ -13,12 +13,12 @@
 <link rel="stylesheet" href="/shared/ui.css">
 <link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
-<body class="font-sans technical-body">
+<body class="docs-body">
 <div id="siteHeader"></div>
 
-<div class="docs-reference-shell">
+<div class="docs-shell">
 <aside id="docsSidebar"></aside>
-<main class="technical-main">
+<main class="docs-content">
   <div class="sheethead">
     <div class="sheethead-band">
       <p class="kicker"><span class="kicker-no">05</span>Smoke test</p>
@@ -53,8 +53,8 @@
 
 <script type="module">
 import { toolHost } from '/shared/webmcp.js';
-import { mountHeader, mountDocsSidebar } from '/shared/ui.js';
-mountHeader('Discovery check');
+import { mountDocsHeader, mountDocsSidebar } from '/shared/ui.js';
+mountDocsHeader('Discovery check');
 mountDocsSidebar('Discovery check');
 
 const statusEl = document.getElementById('statusLine');

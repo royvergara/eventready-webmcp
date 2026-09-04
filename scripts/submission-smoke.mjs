@@ -30,7 +30,10 @@ check('README names production URL', readme.includes('https://eventready-webmcp.
 check('submission names public repository', submission.includes('https://github.com/royvergara/eventready-webmcp'));
 check('prototype boundaries disclosed', /fictional reference contracts/i.test(submission) && /does not transact/i.test(submission));
 
-const testRun = spawnSync(process.execPath, ['--test','engine/*.test.mjs'], { cwd:new URL('.', root), shell:true, encoding:'utf8' });
+// Pin the reporter. Node's default changed to `spec`, and the count below is read
+// out of TAP, so on a newer runtime this reported "0 passing" and failed three
+// checks that were actually fine — a false red that would hide a true one.
+const testRun = spawnSync(process.execPath, ['--test','--test-reporter=tap','engine/*.test.mjs'], { cwd:new URL('.', root), shell:true, encoding:'utf8' });
 const testTotal = Number(testRun.stdout.match(/# tests (\d+)/)?.[1] || 0);
 check('deterministic test suite', testRun.status===0 && testTotal>=200, `${testTotal} passing`);
 check('README test count current', readme.includes(`${testTotal} tests`), `expected ${testTotal}`);
