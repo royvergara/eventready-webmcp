@@ -572,8 +572,14 @@ function renderWorkspace(state = session.snapshot()) {
       // A finished phase carries a check. The numeral only ever means "ahead of you".
       marker.innerHTML = status[phase] ? icon('check') : button.dataset.step;
     }
-    const cue = button.querySelector('i');
-    if (cue && !cue.childElementCount) cue.innerHTML = icon('arrow');
+    // The row says its own state. The description line is the only spare width
+    // in a 224px rail, and once you know a phase is done or current, what it is
+    // for matters less than where you stand in it.
+    const note = button.querySelector('small');
+    if (note) {
+      if (!button.dataset.desc) button.dataset.desc = note.textContent.trim();
+      note.textContent = status[phase] ? 'Complete' : active ? 'In progress' : button.dataset.desc;
+    }
     if (active) button.setAttribute('aria-current','step');
     else button.removeAttribute('aria-current');
     button.setAttribute('aria-label',`${button.querySelector('strong')?.textContent || label(phase)} phase, ${active?'current':status[phase]?'complete':'not complete'}`);
