@@ -217,8 +217,74 @@ function renderSavedEvents() {
   if (!$('savedEventsList')) return;
   const events = Object.values(eventStore.events).filter(item=>item.id!=='sample-wedding').sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
   $('savedEventsSection').hidden = events.length === 0;
-  $('savedEventsList').innerHTML = events.map(item=>`<button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue ${icon('arrow')}</span></button>`).join('');
+  $('savedEventsList').innerHTML = events.map(item=>`<div class="saved-event-row"><button class="saved-event" type="button" data-open-event="${esc(item.id)}"><span class="event-mark ${item.brief.event_type==='work event'?'work':'wedding'}">${esc(eventMark(item.brief.title))}</span><span><strong>${esc(item.brief.title)}</strong><small>${esc(formatDate(item.brief.serve_at))} · ${esc(item.brief.venue_name || 'Venue to confirm')}</small></span><span class="saved-event-status">${item.readiness==='ready'?'Ready to run':`${item.open} decisions open`}</span><span>Continue ${icon('arrow')}</span></button><div class="saved-event-actions"><button class="quiet-button" type="button" data-rename-event="${esc(item.id)}">Rename</button><button class="quiet-button danger" type="button" data-delete-event="${esc(item.id)}">Delete</button></div></div>`).join('');
   document.querySelectorAll('[data-open-event]').forEach(button=>button.onclick=()=>restoreEvent(button.dataset.openEvent));
+  document.querySelectorAll('[data-rename-event]').forEach(button=>button.onclick=()=>renameEventFromList(button.dataset.renameEvent));
+  document.querySelectorAll('[data-delete-event]').forEach(button=>button.onclick=()=>askDeleteEvent(button.dataset.deleteEvent));
+}
+
+
+// An event you can open but never rename or remove is a list that only grows.
+// Renaming edits the brief in place — the title is a label, not a planning
+// input, so nothing downstream needs recomputing. Deleting is the one
+// destructive action here, so it names what goes and asks first.
+let pendingDeleteId = null;
+
+function eventTitleOf(id) {
+  return id === currentEventId ? session.brief.title : (eventStore.events[id]?.brief?.title || 'this event');
+}
+
+function applyEventRename(id, title) {
+  const next = title.trim();
+  if (!next) return false;
+  if (eventStore.events[id]) {
+    eventStore.events[id].brief = { ...eventStore.events[id].brief, title: next };
+    localStorage.setItem(EVENTS_KEY, JSON.stringify(eventStore));
+  }
+  if (id === currentEventId) {
+    session.brief = { ...session.brief, title: next };
+    persist();
+    renderWorkspace(session.snapshot());
+  }
+  renderSavedEvents();
+  showToast(`Renamed to ${next}.`);
+  return true;
+}
+
+function renameEventFromList(id) {
+  restoreEvent(id);
+  showRoute('workspace');
+  startRenameCurrentEvent();
+}
+
+function startRenameCurrentEvent() {
+  $('renameEventInput').value = session.brief.title;
+  $('eventTitle').hidden = true;
+  $('renameEventForm').hidden = false;
+  $('renameEventInput').focus();
+  $('renameEventInput').select();
+}
+
+function endRenameCurrentEvent() {
+  $('renameEventForm').hidden = true;
+  $('eventTitle').hidden = false;
+  $('renameEventButton').focus();
+}
+
+function askDeleteEvent(id) {
+  pendingDeleteId = id;
+  $('deleteEventSummary').textContent =
+    `“${eventTitleOf(id)}” will be removed from this device. Its plan, assignments, and confirmations go with it.`;
+  openOverlay('deleteEventOverlay');
+}
+
+function deleteEvent(id) {
+  delete eventStore.events[id];
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(eventStore));
+  const wasOpen = id === currentEventId;
+  renderSavedEvents();
+  if (wasOpen) { currentEventId = null; booking = null; eventOps = createEventOps(); session.reset(false); session.assess(); showRoute('start'); }
+  showToast('Event deleted.');
 }
 
 function currentBooking(state = session.snapshot()) {
@@ -497,6 +563,7 @@ function renderWorkspace(state = session.snapshot()) {
   $('eventMeta').textContent = `${formatDate(state.brief.serveAt)} · ${state.brief.venueName}`;
   $('eventAccent').textContent = eventMark(state.brief.title);
   $('eventKindLabel').textContent = currentEventId === 'sample-wedding' ? 'SAMPLE PLAN' : 'SAVED EVENT';
+  $('deleteEventButton').hidden = !currentEventId || currentEventId === 'sample-wedding';
   const openCount = unresolved.length + state.readiness.blockers.length;
   const operating=operationalState(state);
   $('eventHealth').textContent = operating.status === 'ready' ? 'Ready to run' : operating.status === 'confirmations' ? 'Confirmations pending' : `${openCount} decision${openCount===1?'':'s'} remaining`;
@@ -1035,6 +1102,12 @@ $('closeBriefReview').onclick=$('editBriefDescription').onclick=()=>{closeOverla
 $('confirmBriefReview').onclick=confirmBriefReview;
 document.querySelectorAll('[data-start-brief]').forEach(button => button.onclick=()=>{ document.querySelectorAll('[data-start-brief]').forEach(item=>item.setAttribute('aria-pressed','false')); button.setAttribute('aria-pressed','true'); $('startBrief').value=button.dataset.startBrief; $('startBrief').focus(); });
 $('sampleWedding').onclick=()=>{resetSample();runGenerating(()=>showRoute('workspace'));};
+$('renameEventButton').onclick=startRenameCurrentEvent;
+$('cancelRenameEvent').onclick=endRenameCurrentEvent;
+$('renameEventForm').onsubmit=event=>{event.preventDefault();if(applyEventRename(currentEventId,$('renameEventInput').value))endRenameCurrentEvent();};
+$('deleteEventButton').onclick=()=>askDeleteEvent(currentEventId);
+$('cancelDeleteEvent').onclick=()=>closeOverlay('deleteEventOverlay');
+$('confirmDeleteEvent').onclick=()=>{closeOverlay('deleteEventOverlay',{restoreFocus:false});if(pendingDeleteId)deleteEvent(pendingDeleteId);pendingDeleteId=null;};
 $('newEventButton').onclick=resetApplication; $('backToEvents').onclick=()=>showRoute('start'); $('backToStart').onclick=()=>showRoute('start');
 $('shapePrevious').onclick=()=>{appState.shapeStep=Math.max(0,appState.shapeStep-1);renderShape();};
 $('shapeNext').onclick=()=>{updateBriefFromFields();appState.shapeStep=Math.min(4,appState.shapeStep+1);renderShape();};
