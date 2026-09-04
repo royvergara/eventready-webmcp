@@ -114,12 +114,38 @@ test('the generated stylesheet carries the design tokens, not just stock utiliti
   }
 });
 
+// Everything a page fetches on its own, without the reader asking for it: a script,
+// a frame, an image, a stylesheet, an icon, a preloaded font.
+const subresources = html => [
+  ...[...html.matchAll(/\ssrc(?:set)?="(https?:\/\/[^"]+)"/g)].map(m => m[1]),
+  ...[...html.matchAll(/<link\b[^>]*\shref="(https?:\/\/[^"]+)"/g)].map(m => m[1])
+];
+
 test('the pages ask for nothing from a third party', () => {
-  // the whole point of vendoring: a conference network cannot break the demo
+  // the whole point of vendoring: a conference network cannot break the demo.
+  //
+  // What breaks a demo is what the page LOADS. This used to match every absolute
+  // URL in the markup, which meant the documentation could not link to the
+  // repository or the licence without failing — an <a href> fetches nothing until
+  // a reader clicks it, and by then they have left. So the guard reads the
+  // attributes that actually issue a request, and a plain link is left alone.
   for (const page of pages) {
-    const external = [...readFileSync(page, 'utf8').matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)];
-    assert.deepEqual(external.map(m => m[1]), [], `${page} loads something from off-origin`);
+    assert.deepEqual(subresources(readFileSync(page, 'utf8')), [],
+      `${page} loads something from off-origin`);
   }
+});
+
+test('the third-party guard would actually catch a third party', () => {
+  // narrowing it to the loading attributes is only safe while it still fires on
+  // every one of them; if this ever fails, the check above has stopped checking
+  for (const markup of ['<script src="https://cdn.example.com/x.js"></script>',
+                        '<img src="https://cdn.example.com/x.png">',
+                        '<iframe src="https://cdn.example.com/x.html"></iframe>',
+                        '<link rel="stylesheet" href="https://fonts.example.com/x.css">']) {
+    assert.equal(subresources(markup).length, 1, `not caught: ${markup}`);
+  }
+  // and stays quiet on a link the reader has to choose to follow
+  assert.deepEqual(subresources('<a href="https://github.com/royvergara/eventready-webmcp">repo</a>'), []);
 });
 
 test('the stylesheet the pages link to is the one that is committed', () => {
