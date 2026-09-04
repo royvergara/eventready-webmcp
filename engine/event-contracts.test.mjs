@@ -98,3 +98,14 @@ test('the nine product tools are narrow, serialisable contracts', () => {
       { assumption_id: 'occasion.headcount', value: 75 })));
   }
 });
+
+test('the session carries an assignment reason through to the readiness record', () => {
+  const active = session();
+  active.assess();
+  const id = active.snapshot().readiness.responsibilities.find(r => r.status === 'unresolved')?.id;
+  assert.ok(id, 'demo event should have at least one unowned responsibility');
+  active.assign(id, 'not_applicable', 'Not needed', 'Venue provides this');
+  const row = active.snapshot().readiness.responsibilities.find(r => r.id === id);
+  assert.equal(row.status, 'not_applicable');
+  assert.equal(row.reason, 'Venue provides this');
+});

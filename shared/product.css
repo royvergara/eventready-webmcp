@@ -73,7 +73,7 @@ button:disabled{cursor:not-allowed;opacity:.5}
 .start-copy h1{letter-spacing:-.04em}
 .phase-head h2,.event-heading h1,.shape-step legend,.proposal-sheet h2{letter-spacing:-.035em}
 .overlay button[aria-label="Close"]{min-width:2.75rem;min-height:2.75rem;border-radius:50%}
-.lifecycle button,.acceptance-toggle{min-height:2.75rem}
+.lifecycle button{min-height:2.75rem}
 .quantity-control{grid-template-columns:2.75rem 3.25rem 2.75rem}
 .quantity-control button{width:2.75rem;height:2.75rem}
 .quiet-button:hover,.secondary-button:hover,.nav-link:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}
@@ -184,7 +184,7 @@ body{background:var(--canvas)}
 .brief-review-needs{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem;padding:1rem;border:1px solid var(--line);border-radius:.6rem}.brief-review-needs strong{font-size:.7rem}.brief-review-needs>div{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.35rem}.brief-review-needs span{padding:.35rem .55rem;border-radius:2rem;background:var(--green-soft);color:var(--green);font-size:.58rem;font-weight:700}.assumption-note{display:flex;gap:.55rem;margin-top:1rem;padding:.85rem 1rem;border-left:3px solid var(--champagne);background:var(--surface-2);font-size:.64rem}.assumption-note span{color:var(--muted)}
 .impact-banner{display:grid;grid-template-columns:1.8rem minmax(0,1fr) auto;align-items:center;gap:.7rem;margin:-.25rem 0 1rem;padding:.75rem .85rem;border:1px solid color-mix(in srgb,var(--green) 22%,var(--line));border-radius:.65rem;background:var(--green-soft)}.impact-banner>span{display:grid;width:1.8rem;height:1.8rem;place-items:center;border-radius:50%;background:var(--green);color:#fff}.impact-banner div{display:grid;gap:.1rem}.impact-banner strong{font-size:.68rem}.impact-banner small{color:var(--green);font-size:.61rem}.impact-banner button{border:0;background:transparent;color:var(--muted);font-size:1rem}
 .commitment-evidence{display:grid;gap:.25rem;margin:1rem 0;padding:1rem;border:1px solid var(--line);border-radius:.6rem;background:var(--surface-2)}.commitment-evidence>span{color:var(--blue);font-family:var(--mono);font-size:.52rem;letter-spacing:.1em}.commitment-evidence strong{font-size:.73rem}.commitment-evidence small{color:var(--muted);font-size:.62rem}
-.assignment-control{display:grid;gap:.35rem}.acceptance-toggle{justify-self:start;padding:.3rem .55rem;border:1px solid var(--champagne);border-radius:2rem;background:var(--amber-soft);color:var(--amber);font-size:.55rem;font-weight:750}.acceptance-toggle.accepted{border-color:color-mix(in srgb,var(--green) 25%,var(--line));background:var(--green-soft);color:var(--green)}
+
 .run-mobile-mode{display:none}/* Centred along the bottom, not tucked into the corner. It was fixed to the
    bottom right, which is where the primary action of whatever you just did
    sits, so the confirmation landed on top of the button that produced it.
@@ -196,7 +196,6 @@ body{background:var(--canvas)}
 body:has(.phase-view.active>.next-action) .app-toast{bottom:calc(var(--action-bar-height) + 1rem)}
 @media(max-width:767px){
   .save-status{display:none}.brief-review-grid{grid-template-columns:1fr}.brief-review-needs{align-items:flex-start;flex-direction:column}.brief-review-needs>div{justify-content:flex-start}.brief-review-sheet>footer{display:grid;grid-template-columns:1fr}.brief-review-sheet>footer button{width:100%}
-  .assignment-control{width:100%}.assignment-control .assignment-select{width:100%}
   .run-mobile-mode{display:grid;gap:1rem;margin-bottom:1rem;padding:1.15rem;border:1px solid rgba(101,86,216,.2);border-radius:.75rem;background:linear-gradient(145deg,var(--surface),var(--blue-soft))}.run-now{display:grid;grid-template-columns:3.75rem minmax(0,1fr);gap:.8rem;align-items:start}.run-now time{font-family:var(--mono);font-size:.62rem;color:var(--blue)}.run-now h3{margin:0;font-family:var(--display);font-size:1.25rem}.run-now p{margin:.25rem 0 0;color:var(--muted);font-size:.64rem}.run-mobile-mode>.primary-button{width:100%}.run-next{display:grid;gap:.25rem;padding-top:.85rem;border-top:1px solid rgba(101,86,216,.15)}.run-next span{color:var(--muted);font-family:var(--mono);font-size:.52rem;letter-spacing:.08em}.run-next strong{font-size:.7rem}.run-mobile-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}.run-mobile-actions button{width:100%;font-size:.6rem}.run-cover,.run-banner,.run-contacts{display:none}.run-table{display:none}.run-table.expanded{display:block}.app-toast{bottom:1rem}
 }
 
@@ -283,7 +282,7 @@ html{background:var(--canvas)}.app-header{background:rgba(248,247,244,.94)}.bran
 .shape-layout{border-color:#d6d2ca}.decision-pane{background:var(--surface)}.shape-step legend,.preview-identity h2,.event-heading h1,.phase-head h2{font-family:var(--display);font-weight:560}.live-plan{position:relative;background:linear-gradient(145deg,#18223a,#202d4a)}.live-plan::after{content:"";position:absolute;right:-4rem;bottom:1rem;width:18rem;height:18rem;border:1px solid rgba(255,255,255,.11);border-radius:50%}.shape-progress b{background:var(--accent)}
 .event-heading .event-mark{background:var(--accent-soft);color:var(--accent);border-radius:50% 50% 46% 54%}.event-health strong{max-width:230px}.phase-rail{overflow:hidden}.phase-rail::before{content:"";position:absolute;left:1.88rem;top:2.25rem;bottom:2.25rem;border-left:1px solid color-mix(in srgb,var(--accent) 25%,var(--line))}.phase-rail button{position:relative}.phase-rail button>span{z-index:1}.phase-rail button.active{background:var(--accent-soft)}.phase-rail button.active i,.phase-rail button.done i{background:var(--accent)}.phase-rail button.done>span{background:var(--accent);border-color:var(--accent)}.phase-status.done{background:var(--green-soft);color:var(--green)}.next-action{border-color:color-mix(in srgb,var(--accent) 24%,var(--line));background:var(--accent-soft)}.next-action div span{color:var(--accent);font-family:var(--mono)}
 .service-brief{position:relative;overflow:hidden;background:linear-gradient(130deg,#172034,#24314f)}.service-brief::after{content:"";position:absolute;right:-3rem;top:-4rem;width:13rem;height:13rem;border:1px solid rgba(255,255,255,.13);border-radius:50%}.provider-card{position:relative;background:var(--surface);border-radius:.65rem}.provider-card.recommended{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent),0 14px 32px rgba(23,32,52,.06)}.provider-rank{background:transparent;color:var(--accent);font-family:var(--mono);font-size:.68rem}.fit-label{display:block;margin-bottom:.42rem;color:var(--accent);font-family:var(--mono);font-size:.58rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase}.provider-card h3{font-family:var(--display);font-size:1.06rem;font-weight:560}.provider-card aside small{color:var(--muted);font-family:var(--mono);font-size:.55rem;letter-spacing:.06em}.provider-card aside strong{font-family:var(--display);font-size:1.25rem;font-weight:600}
-@media(min-width:1100px){.coordinate-grid{grid-template-columns:1fr}.responsibility-groups{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.coordinate-grid>aside{display:grid;grid-template-columns:1fr;max-width:none}.budget-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2rem}.budget-panel>span,.budget-panel>strong,.budget-panel>small,.budget-panel>.budget-bar{grid-column:1}.budget-panel>.budget-lines,.budget-panel>.handoff-panel{grid-column:2}.budget-panel>.budget-lines{grid-row:1/4}.budget-panel>.handoff-panel{grid-row:4/6}.responsibility-group:nth-child(1){border-top:3px solid var(--green)}.responsibility-group:nth-child(2){border-top:3px solid var(--accent)}.responsibility-group:nth-child(3){border-top:3px solid var(--coral)}}
+@media(min-width:1100px){.coordinate-grid{grid-template-columns:1fr}.responsibility-groups{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.coordinate-grid>aside{display:grid;grid-template-columns:1fr;max-width:none}.budget-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2rem}.budget-panel>span,.budget-panel>strong,.budget-panel>small,.budget-panel>.budget-bar{grid-column:1}.budget-panel>.budget-lines,.budget-panel>.handoff-panel{grid-column:2}.budget-panel>.budget-lines{grid-row:1/4}.budget-panel>.handoff-panel{grid-row:4/6}.responsibility-group.complete{border-top:3px solid var(--status-ready)}.responsibility-group:not(.complete){border-top:3px solid var(--status-confirm)}}
 .readiness-card{position:relative;overflow:hidden}.readiness-card::after{content:"";position:absolute;right:-1rem;bottom:-1rem;width:3rem;height:3rem;border:1px solid var(--line);border-radius:50%}.run-cover{display:flex;justify-content:space-between;gap:2rem;align-items:flex-end;margin-bottom:1rem;padding:2rem;border-radius:.7rem;background:linear-gradient(135deg,#172034,#24314f);color:#fff}.run-cover>div>span,.run-cover aside span{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:#c8cde0}.run-cover h3{margin:.45rem 0;font-family:var(--display);font-size:clamp(1.8rem,4vw,3rem);font-weight:520}.run-cover p{margin:0;color:#c8cde0;font-size:.72rem}.run-cover aside{text-align:right}.run-cover aside strong{display:block;margin-top:.35rem;font-family:var(--display);font-size:1.05rem}.run-banner{background:var(--champagne);border-color:#dfceb5}.run-banner.ready{background:var(--green-soft)}.run-row time{font-family:var(--mono)}.run-row h4{font-family:var(--display);font-size:.86rem;font-weight:560}
 @media(max-width:1279px){.phase-rail::before{left:2.1rem;right:2.1rem;top:2.05rem;bottom:auto;border-left:0;border-top:1px solid color-mix(in srgb,var(--accent) 25%,var(--line))}}
 @media(max-width:767px){.start-view::before,.start-view::after{display:none}.start-copy h1{font-size:3.25rem}.output-grid::after{display:none}.run-cover{align-items:flex-start;flex-direction:column}.run-cover aside{text-align:left}.phase-rail::before{display:none}}
@@ -384,7 +383,7 @@ body{background:var(--canvas)}
   .brief-composer textarea{height:5.75rem;min-height:5.75rem}
   .event-header{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,300px);align-items:end}
   .responsibility-groups{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .responsibility-group:nth-child(3){grid-column:2;grid-row:1/span 2}
+  
   .coordinate-grid>aside{align-self:start}
   .readiness-matrix{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
   .catalog-list{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -472,13 +471,22 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 
 .responsibility-group>header{align-items:center;padding:.9rem 1rem}
 .responsibility-group>header h3{font-size:.78rem}
-.responsibility-row.assignable{grid-template-columns:minmax(8rem,1fr) minmax(16rem,20rem);gap:1rem;min-height:4.75rem;padding:.75rem 1rem}
+.responsibility-row.assignable{grid-template-columns:minmax(8rem,1fr) minmax(11rem,14rem) auto;gap:1rem;min-height:4.75rem;padding:.75rem 1rem}
 .responsibility-row.assignable>div:first-child{min-width:0}
 .responsibility-row.assignable strong{font-size:.76rem}
 .responsibility-row.assignable small{margin-top:.25rem;font-size:.61rem}
-.responsibility-row .assignment-control{display:grid;grid-template-columns:minmax(9rem,1fr) auto;align-items:center;justify-content:end;gap:.55rem;width:100%}
 .responsibility-row .assignment-select{max-width:none;min-height:2.65rem;margin:0}
-.responsibility-row .acceptance-toggle{min-height:2.65rem;justify-self:end;padding:.55rem .7rem;border-radius:var(--radius-control);white-space:nowrap}
+/* The third column is the score for the row: settled, or still open. It is the
+   only thing that changes when you pick a name, so the row never moves. */
+.responsibility-row .row-state{display:inline-flex;align-items:center;gap:.3rem;justify-self:end;color:var(--status-ready);font-size:.6rem;font-weight:700;white-space:nowrap}
+.responsibility-row .row-state.needs{color:var(--status-confirm)}
+.responsibility-row.unowned{background:color-mix(in srgb,var(--status-confirm) 5%,transparent)}
+/* Set aside is a state, not a deletion. engine/readiness.js keeps the row; it
+   stays legible here with the reason and a way back. */
+.responsibility-row.set-aside strong{color:var(--muted);text-decoration:line-through}
+.responsibility-row.set-aside .set-aside-pill{padding:.2rem .55rem;border-radius:2rem;background:var(--surface-2);color:var(--muted);font-size:.62rem;font-weight:600}
+.responsibility-group>header span{font-family:var(--mono);font-size:.6rem}
+.responsibility-group.complete>header span{color:var(--status-ready)}
 
 .event-health{min-width:max-content;padding-left:0;border-left:0;text-align:right}
 .event-health strong{max-width:none;white-space:nowrap}
@@ -540,9 +548,8 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
   .plan-ready-sheet.proposal-sheet{width:calc(100% - 2rem);max-height:calc(100dvh - 2rem);padding:1.25rem}
   .plan-ready-sheet.proposal-sheet>header{margin:0;padding:0 0 1rem}
   .plan-ready-sheet.proposal-sheet>footer{margin:1.25rem 0 0;padding:1rem 0 max(0px,env(safe-area-inset-bottom))}
-  .responsibility-row.assignable{grid-template-columns:minmax(0,1fr);gap:.65rem;padding:1rem}
-  .responsibility-row .assignment-control{grid-template-columns:minmax(0,1fr) auto;justify-content:stretch}
-  .responsibility-row .acceptance-toggle{justify-self:stretch}
+  .responsibility-row.assignable{grid-template-columns:minmax(0,1fr) auto;gap:.65rem;padding:1rem}
+  .responsibility-row.assignable .assignment-select{grid-column:1/-1}
   .phase-canvas{padding-bottom:9rem}
   .phase-view.active>.next-action{left:0;right:0;bottom:0;gap:.7rem;padding:.85rem 1rem max(.85rem,env(safe-area-inset-bottom));border-radius:0}
   .phase-view.active>.next-action .primary-button{min-height:3rem}
@@ -578,8 +585,8 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 @media(max-width:600px){.about-view{padding:2.5rem 1rem 3.5rem}.about-hero h1{font-size:clamp(2.8rem,13vw,3.7rem)}.about-actions{display:grid}.about-actions a{width:100%;text-align:center}.about-journey ol{grid-template-columns:1fr}.about-journey li{display:grid;grid-template-columns:1.85rem minmax(0,1fr);gap:1rem;border-right:0}.about-journey strong{margin-top:0}.about-proof{margin-inline:0;padding:1.5rem}.about-proof dl{grid-template-columns:1fr}.about-proof dl div{border-right:0;border-bottom:1px solid rgba(255,255,255,.16)}.evidence-section nav{grid-template-columns:1fr}.evidence-section nav a{border-right:0!important;border-bottom:1px solid var(--line)!important}.evidence-section nav a:last-child{border-bottom:0!important}.evidence-section footer{flex-direction:column}}
 
 @media(max-width:430px){
-  .responsibility-row .assignment-control{grid-template-columns:1fr}
-  .responsibility-row .acceptance-toggle{width:100%}
+  .responsibility-row.assignable{grid-template-columns:minmax(0,1fr)}
+  .responsibility-row .row-state{justify-self:start}
 }
 
 @media(min-width:768px) and (max-width:1279px){
@@ -614,7 +621,7 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 
 /* Release cleanup: emphasis comes from hierarchy and surface tone, not accent stripes. */
 .provider-card.recommended{box-shadow:0 14px 32px rgba(23,32,52,.06)}
-.team-roster,.commitment-lifecycle,.responsibility-group:nth-child(1),.responsibility-group:nth-child(2),.responsibility-group:nth-child(3){border-top-width:1px}
+.team-roster,.commitment-lifecycle,.responsibility-group{border-top-width:1px}
 .plan-banner{border-left-width:1px}.assumption-note{border:1px solid var(--line);border-left-width:1px}.shape-progress b{transition:none}
 
 /* Technical documentation: dense, navigable, and still recognizably EventReady. */
