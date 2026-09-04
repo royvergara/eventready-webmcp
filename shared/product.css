@@ -8,7 +8,8 @@
 .add-person-form[hidden]{display:none}
 .commitment-lifecycle{background:#fff;border-color:var(--line);border-top:3px solid var(--green)}.commitment-lifecycle>header{display:flex;justify-content:space-between;align-items:start}.commitment-lifecycle>header h3{margin:.25rem 0;font-family:var(--display);font-size:1.15rem}.commitment-lifecycle>header>strong{font-family:var(--display);font-size:1.25rem}.lifecycle{display:grid;grid-template-columns:repeat(4,1fr);margin:1rem 0;border:1px solid var(--line);border-radius:.55rem;overflow:hidden}.lifecycle button{padding:.7rem .45rem;border:0;border-right:1px solid var(--line);background:#fff;color:var(--muted);font-size:.62rem}.lifecycle button:last-child{border:0}.lifecycle button.active{background:var(--green-soft);color:var(--green);font-weight:800}.lifecycle button span{display:block;margin-bottom:.25rem}.prototype-note{padding:.55rem .7rem;border-radius:.45rem;background:var(--amber-soft);color:var(--amber)!important}.commitment-actions{display:flex;justify-content:space-between;margin-top:.8rem}
 .readiness-matrix{display:grid;gap:.5rem;margin-bottom:1rem}.readiness-matrix article{display:grid;grid-template-columns:2rem 1fr auto;gap:.75rem;align-items:start;padding:.85rem 1rem;border:1px solid var(--line);border-radius:.6rem;background:#fff}.readiness-matrix article>span{width:2rem;height:2rem;display:grid;place-items:center;border-radius:50%;font-weight:800}.readiness-matrix article.ready>span{background:var(--green-soft);color:var(--green)}.readiness-matrix article.confirm>span{background:var(--amber-soft);color:var(--amber)}.readiness-matrix article.blocked>span{background:var(--coral-soft);color:var(--coral)}.readiness-matrix strong,.readiness-matrix small{display:block}.readiness-matrix strong{font-size:.74rem}.readiness-matrix small{margin-top:.2rem;color:var(--muted);font-size:.62rem}.readiness-matrix b{font-size:.61rem;text-transform:uppercase;letter-spacing:.05em}.confirmation-panel{margin:1rem 0;padding:1rem;border-radius:.7rem;background:linear-gradient(135deg,#172034,#24314f);color:#fff}.confirmation-panel h3{margin:.3rem 0;font-family:var(--display);font-size:1.15rem}.confirmation-panel p{margin:.2rem 0;color:#c8cde0;font-size:.67rem}.confirmation-list{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem}.confirmation-list label{display:flex;gap:.65rem;align-items:center;padding:.7rem;border:1px solid rgba(255,255,255,.14);border-radius:.5rem;background:rgba(255,255,255,.05)}.confirmation-list strong,.confirmation-list small{display:block}.confirmation-list strong{font-size:.67rem}.confirmation-list small{margin-top:.2rem;color:#b7c0d1;font-size:.57rem}
-.run-contacts{display:grid;grid-template-columns:auto repeat(3,1fr);gap:.5rem;align-items:center;margin:1rem 0}.run-contacts article{display:grid;grid-template-columns:2rem 1fr;gap:.55rem;align-items:center;padding:.65rem;border:1px solid var(--line);border-radius:.55rem;background:#fff}.run-contacts article>span{width:2rem;height:2rem;display:grid;place-items:center;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:.56rem;font-weight:800}.run-contacts strong,.run-contacts small{display:block;font-size:.62rem}.run-contacts small{color:var(--muted)}.run-contacts a{grid-column:1/-1;color:var(--accent);font-size:.58rem}.run-row{grid-template-columns:2rem 7rem minmax(0,1fr) 12rem!important}.run-check{width:1.8rem;height:1.8rem;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--green)}.run-row.complete{opacity:.58}.run-row.complete h4{text-decoration:line-through}
+.run-contacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;align-items:start;margin:1rem 0}
+.run-contacts>.kicker{grid-column:1/-1}.run-contacts article{display:grid;grid-template-columns:2rem minmax(0,1fr) auto;gap:.55rem;align-items:center;padding:.65rem;border:1px solid var(--line);border-radius:.55rem;background:#fff}.run-contacts article>span{width:2rem;height:2rem;display:grid;place-items:center;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:.56rem;font-weight:800}.run-contacts strong,.run-contacts small{display:block;font-size:.62rem}.run-contacts small{color:var(--muted)}.run-contacts a{justify-self:end;color:var(--accent);font-size:.58rem;text-align:right;overflow-wrap:anywhere}.run-row{grid-template-columns:2rem 7rem minmax(0,1fr) 12rem!important}.run-check{width:1.8rem;height:1.8rem;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--green)}.run-row.complete{opacity:.58}.run-row.complete h4{text-decoration:line-through}
 @media(max-width:900px){.people-list,.confirmation-list{grid-template-columns:1fr 1fr}.add-person-form,.custom-task form{grid-template-columns:1fr 1fr}.run-contacts{grid-template-columns:1fr 1fr}.run-contacts>.kicker{grid-column:1/-1}}
 @media(max-width:650px){.package-summary,.terms-grid{grid-template-columns:1fr;display:grid}.package-total{text-align:left}.refine-grid,.people-list,.confirmation-list,.add-person-form,.custom-task form{grid-template-columns:1fr}.lifecycle{grid-template-columns:1fr 1fr}.assignment-select{max-width:none}.run-row{grid-template-columns:2rem 5rem minmax(0,1fr)!important}.run-row>span{grid-column:3}.run-contacts{grid-template-columns:1fr}}
 
@@ -835,3 +836,40 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .area-confirms input{margin-top:.15rem;accent-color:var(--accent)}
 .area-confirms strong{display:block;font-size:.66rem;font-weight:650}
 .area-confirms small{display:block;margin-top:.1rem;color:var(--muted);font-size:.58rem}
+
+/* Run: sharing the plan --------------------------------------------------- */
+.run-actions{display:flex;align-items:center;gap:.4rem}
+.share-menu{position:relative}
+.share-menu>summary{list-style:none;cursor:pointer}
+.share-menu>summary::-webkit-details-marker{display:none}
+.share-menu>summary .icon{transition:transform .15s ease}
+.share-menu[open]>summary .icon{transform:rotate(180deg)}
+.share-menu>div{position:absolute;z-index:20;right:0;top:calc(100% + .35rem);display:grid;min-width:11rem;padding:.3rem;border:1px solid var(--line);border-radius:.55rem;background:#fff;box-shadow:var(--shadow)}
+.share-menu>div button{padding:.45rem .6rem;border:0;border-radius:.4rem;background:transparent;color:inherit;font:inherit;font-size:.66rem;text-align:left;cursor:pointer}
+.share-menu>div button:hover{background:var(--accent-soft);color:var(--accent)}
+.share-menu>div button:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+
+/* Run of show: the day in segments, on a spine ----------------------------- */
+/* It was one flat list of thirteen rows with the time set small and grey on the
+   right. Nothing said which part of the day you were reading, so it scanned as a
+   table of chores rather than a sequence you could run an event from. */
+.run-sheet .run-segment{position:relative;padding:1.15rem 0 .35rem}
+.run-sheet .run-segment+.run-segment{border-top:1px solid var(--line)}
+.run-sheet .run-segment>header{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:0 1rem .7rem}
+.run-sheet .run-segment>header .kicker{color:var(--accent);font-size:.6rem;letter-spacing:.14em}
+.run-sheet .run-segment>header small{color:var(--muted);font-family:var(--mono);font-size:.6rem}
+/* the spine runs between the first and last marker of the segment, and the check
+   buttons are the markers, so completing an item marks the timeline itself */
+.run-sheet .run-segment::before{content:"";position:absolute;z-index:0;left:2rem;top:3.3rem;bottom:1.7rem;width:1px;background:var(--line)}
+.run-sheet .run-row{position:relative;z-index:1;border-bottom:0;align-items:start}
+.run-sheet .run-check{justify-self:center;flex:none}
+.run-sheet .run-row time{align-self:center;color:var(--ink);font-family:var(--mono);font-size:.66rem;font-weight:600;text-align:right}
+.run-sheet .run-row h4{font-family:var(--display);font-size:.86rem;font-weight:560}
+.run-sheet .run-owner{align-self:center;display:inline-flex;align-items:center;gap:.35rem;justify-self:start;padding:.2rem .5rem;border-radius:2rem;background:var(--blue-soft);color:var(--blue);font-size:.62rem;font-weight:600}
+.run-sheet .run-owner.unassigned{background:var(--amber-soft);color:var(--amber)}
+@media print{ .run-sheet .run-segment{break-inside:avoid} }
+
+/* inline icons scale with their text and inherit its colour */
+.icon{display:inline-block;width:1em;height:1em;flex:none;vertical-align:-.13em}
+.run-check .icon,.readiness-matrix article>span .icon,.readiness-transition>div>span .icon{width:1.05em;height:1.05em;vertical-align:0}
+.impact-banner>span .icon,.plan-phase-row.done>span .icon{width:1.1em;height:1.1em;vertical-align:0}

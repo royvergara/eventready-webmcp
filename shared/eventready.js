@@ -6,7 +6,7 @@ import { materializeBasket } from './basket.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 
-function chronologicalOrder(value) {
+export function chronologicalOrder(value) {
   const when = String(value || '').toLowerCase();
   if (when === 'confirmed') return -1;
   if (when === 'that morning') return 8 * 60;

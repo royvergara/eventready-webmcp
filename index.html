@@ -34,7 +34,7 @@
             <button type="button" aria-pressed="false" data-start-brief="A milestone birthday celebration for 60 guests with a $9,000 budget">Celebration</button>
             <button type="button" aria-pressed="false" data-start-brief="A community fundraiser for 180 people with a $20,000 budget">Community event</button>
           </div>
-          <button class="primary-button" type="submit">Build my event plan <span>→</span></button>
+          <button class="primary-button" type="submit">Build my event plan <svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/></svg></button>
         </div>
         <p id="startError" class="form-error" role="alert" hidden>Tell us a little about the event first.</p>
       </form>
@@ -51,7 +51,7 @@
 
       <section class="sample-plans" aria-label="Sample plans">
         <div class="section-intro"><span class="kicker">EXPLORE A COMPLETE EXAMPLE</span><h2>See EventReady in action</h2></div>
-        <button id="sampleWedding" class="sample-plan" type="button"><span class="event-mark wedding">A&amp;J</span><span><strong>Alex &amp; Jordan’s Wedding</strong><small>October 17 · Cedar House · 120 guests</small></span><span class="sample-status"><b>10</b><small>decisions open</small></span><span>Open plan →</span></button>
+        <button id="sampleWedding" class="sample-plan" type="button"><span class="event-mark wedding">A&amp;J</span><span><strong>Alex &amp; Jordan’s Wedding</strong><small>October 17 · Cedar House · 120 guests</small></span><span class="sample-status"><b>10</b><small>decisions open</small></span><span>Open plan <svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/></svg></span></button>
       </section>
       <section id="savedEventsSection" class="sample-plans" aria-label="Your saved events" hidden>
         <div class="section-intro"><span class="kicker">SAVED ON THIS DEVICE</span><h2>Continue planning</h2></div>
@@ -60,7 +60,7 @@
     </section>
 
     <section id="shapeView" class="shape-view" hidden>
-      <div class="shape-progress"><button id="backToStart" type="button">← Back</button><div><span id="shapeProgressText">Step 1 of 5</span><i id="shapeProgressTrack" role="progressbar" aria-label="Event setup progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"><b id="shapeProgressBar"></b></i></div></div>
+      <div class="shape-progress"><button id="backToStart" type="button"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 8h-9"/><polyline points="7.4 4.4 3.8 8 7.4 11.6"/></svg> Back</button><div><span id="shapeProgressText">Step 1 of 5</span><i id="shapeProgressTrack" role="progressbar" aria-label="Event setup progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"><b id="shapeProgressBar"></b></i></div></div>
       <div class="shape-layout">
         <section class="decision-pane">
           <span class="kicker">SHAPE YOUR EVENT</span>
@@ -71,7 +71,7 @@
             <fieldset class="shape-step" data-shape-step="3"><legend>What should guide the plan?</legend><p>Budget and service priorities help rank sensible alternatives.</p><label>Total working budget<div class="money-field"><span>$</span><input id="fieldBudget" type="number" min="0"></div></label><label>Top priority<select id="fieldPriority"><option value="coverage">Complete coverage</option><option value="coordination">Lowest coordination burden</option><option value="budget">Stay under budget</option><option value="experience">Guest experience</option></select></label></fieldset>
             <fieldset class="shape-step" data-shape-step="4"><legend>What is already handled?</legend><p>EventReady will focus on the seams that still need an owner.</p><label class="helper-count">Available helpers<input id="fieldHelpers" type="number" min="0" max="100"></label><div class="already-list"><label><input type="checkbox" checked disabled><span>Venue selected</span></label><label><input id="fieldFoodBooked" type="checkbox"><span>Catering already booked</span></label><label><input id="fieldEquipmentHandled" type="checkbox"><span>Serving equipment handled</span></label></div></fieldset>
           </div>
-          <div class="shape-actions"><button id="shapePrevious" class="secondary-button" type="button">Previous</button><button id="shapeNext" class="primary-button" type="button">Continue</button><button id="buildPlan" class="primary-button" type="button" hidden>Build my plan →</button></div>
+          <div class="shape-actions"><button id="shapePrevious" class="secondary-button" type="button">Previous</button><button id="shapeNext" class="primary-button" type="button">Continue</button><button id="buildPlan" class="primary-button" type="button" hidden>Build my plan <svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/></svg></button></div>
         </section>
 
         <aside class="live-plan" aria-label="Live event plan preview">
@@ -87,7 +87,7 @@
 
     <section id="workspaceView" class="workspace-view" hidden>
       <header class="event-header">
-        <div><button id="backToEvents" class="back-button" type="button">← Events</button><div class="event-heading"><span id="eventAccent" class="event-mark wedding">A&amp;J</span><div><span id="eventKindLabel" class="sample-label">SAMPLE PLAN</span><h1 id="eventTitle">Alex &amp; Jordan’s Wedding</h1><p id="eventMeta">Saturday, October 17 · 6:00 PM · Cedar House</p></div></div></div>
+        <div><button id="backToEvents" class="back-button" type="button"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 8h-9"/><polyline points="7.4 4.4 3.8 8 7.4 11.6"/></svg> Events</button><div class="event-heading"><span id="eventAccent" class="event-mark wedding">A&amp;J</span><div><span id="eventKindLabel" class="sample-label">SAMPLE PLAN</span><h1 id="eventTitle">Alex &amp; Jordan’s Wedding</h1><p id="eventMeta">Saturday, October 17 · 6:00 PM · Cedar House</p></div></div></div>
         <div class="event-health"><span>EVENT READINESS</span><strong id="eventHealth" aria-live="polite">10 decisions remaining</strong><small id="eventCountdown">49 days to go</small></div>
       </header>
 
@@ -117,7 +117,7 @@
 
   <div id="briefReviewOverlay" class="overlay" hidden>
     <section class="proposal-sheet brief-review-sheet" role="dialog" aria-modal="true" aria-labelledby="briefReviewTitle" tabindex="-1">
-      <header><div><span class="kicker">YOUR EVENT BRIEF</span><h2 id="briefReviewTitle">Here’s what EventReady understood.</h2></div><button id="closeBriefReview" type="button" aria-label="Close">×</button></header>
+      <header><div><span class="kicker">YOUR EVENT BRIEF</span><h2 id="briefReviewTitle">Here’s what EventReady understood.</h2></div><button id="closeBriefReview" type="button" aria-label="Close"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 4.6 11.4 11.4"/><path d="M11.4 4.6 4.6 11.4"/></svg></button></header>
       <p>Confirm the essentials before we build the plan. Assumptions stay visible and can be refined next.</p>
       <div class="brief-review-grid">
         <label><span>Event name <small>Inferred</small></span><input id="reviewTitle" type="text"></label>
@@ -127,13 +127,13 @@
       </div>
       <div id="briefReviewNeeds" class="brief-review-needs"></div>
       <aside class="assumption-note"><strong>Still to confirm</strong><span>Date, venue, service time, kitchen access, and planning priorities.</span></aside>
-      <footer><button id="editBriefDescription" class="secondary-button" type="button">Edit description</button><button id="confirmBriefReview" class="primary-button" type="button">Continue with this brief →</button></footer>
+      <footer><button id="editBriefDescription" class="secondary-button" type="button">Edit description</button><button id="confirmBriefReview" class="primary-button" type="button">Continue with this brief <svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/></svg></button></footer>
     </section>
   </div>
 
   <div id="proposalOverlay" class="overlay" hidden>
     <section class="proposal-sheet" role="dialog" aria-modal="true" aria-labelledby="proposalTitle" tabindex="-1">
-      <header><div><span class="kicker">REVIEW CHANGE</span><h2 id="proposalTitle">Review this change</h2></div><button id="closeProposal" type="button" aria-label="Close">×</button></header>
+      <header><div><span class="kicker">REVIEW CHANGE</span><h2 id="proposalTitle">Review this change</h2></div><button id="closeProposal" type="button" aria-label="Close"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 4.6 11.4 11.4"/><path d="M11.4 4.6 4.6 11.4"/></svg></button></header>
       <p id="proposalSummary"></p>
       <div id="proposalDelta" class="proposal-delta"></div>
       <div id="proposalRisks" class="proposal-risks"></div>
@@ -143,9 +143,9 @@
 
   <div id="packageOverlay" class="overlay" hidden>
     <section class="proposal-sheet package-sheet" role="dialog" aria-modal="true" aria-labelledby="packageTitle" tabindex="-1">
-      <header><div><span class="kicker">PACKAGE WORKBENCH</span><h2 id="packageTitle">Review service package</h2></div><button id="closePackage" type="button" aria-label="Close">×</button></header>
+      <header><div><span class="kicker">PACKAGE WORKBENCH</span><h2 id="packageTitle">Review service package</h2></div><button id="closePackage" type="button" aria-label="Close"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 4.6 11.4 11.4"/><path d="M11.4 4.6 4.6 11.4"/></svg></button></header>
       <div id="packageBody"></div>
-      <footer><button id="cancelPackage" class="secondary-button" type="button">Back to results</button><button id="reviewPackage" class="primary-button" type="button">Review commitment →</button></footer>
+      <footer><button id="cancelPackage" class="secondary-button" type="button">Back to results</button><button id="reviewPackage" class="primary-button" type="button">Review commitment <svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/></svg></button></footer>
     </section>
   </div>
 
@@ -154,7 +154,7 @@
       <header><div><span class="kicker">WORKSPACE CREATED</span><h2 id="planReadyTitle">Your event has a working plan.</h2></div></header>
       <p id="planReadySummary">EventReady has translated the brief into requirements, service decisions, responsibilities, and a readiness path.</p>
       <div class="ready-preview"><div><span>Next phase</span><strong>Source compatible services</strong></div><div><span>Saved</span><strong>On this device</strong></div></div>
-      <footer><button id="editReadyBrief" class="secondary-button" type="button">Keep editing</button><button id="openWorkspace" class="primary-button" type="button">Open workspace →</button></footer>
+      <footer><button id="editReadyBrief" class="secondary-button" type="button">Keep editing</button><button id="openWorkspace" class="primary-button" type="button">Open workspace <svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8h9"/><polyline points="8.6 4.4 12.2 8 8.6 11.6"/></svg></button></footer>
     </section>
   </div>
 

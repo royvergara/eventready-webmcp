@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import test from 'node:test';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 // shared/tailwind.css is generated and committed, so it can fall out of step with the
 // markup: add a utility class to a page, forget to regenerate, and the class silently
@@ -119,6 +120,23 @@ test('product.css is imported unlayered', () => {
   const docs = readFileSync('shared/docs.css', 'utf8');
   assert.match(docs, /@import url\('\/shared\/product\.css[^']*'\);/,
     'product.css is imported into a cascade layer again');
+});
+
+test('every module the pages load actually parses', () => {
+  // The whole suite passed green while the application was dead. A stray quote in
+  // a template literal made shared/eventready-ui.js fail to parse, so no handler
+  // ever bound and every control on the page did nothing. Nothing here imports the
+  // browser modules — they fetch their data on load — so nothing was reading them.
+  const modules = [
+    ...readdirSync('shared').filter(file => file.endsWith('.js')).map(file => `shared/${file}`),
+    ...readdirSync('engine').filter(file => file.endsWith('.js')).map(file => `engine/${file}`)
+  ];
+  assert.ok(modules.length >= 10, `expected the module set, found ${modules.length}`);
+  for (const file of modules) {
+    const parsed = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+    assert.equal(parsed.status, 0,
+      `${file} does not parse:\n${(parsed.stderr || '').split('\n').slice(0, 3).join('\n')}`);
+  }
 });
 
 test('the create-another-event action only appears inside a workspace', () => {
