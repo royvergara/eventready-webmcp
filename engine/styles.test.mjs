@@ -18,6 +18,84 @@ const componentSelectors = readdirSync('shared')
   .map(file => readFileSync(`shared/${file}`, 'utf8'))
   .join('\n');
 
+// Every page that loads docs.css is a documentation page and is built from one
+// template. There used to be four, grown one page at a time: three shell classes,
+// three body classes, three content classes, two sidebars and two names for the
+// same header. They drifted exactly where you would expect — the reading column
+// was 780px on the overview and 970px on the reference pages, the title dropped a
+// size between them, and the five pages that happened to link ui.css wore a 2px
+// carbon rule across the masthead that the other two never had.
+const docPages = pages.filter(page => readFileSync(page, 'utf8').includes('/shared/docs.css'));
+
+// The retired names. Any one of them reappearing means a page has started a
+// fifth template rather than using the one that exists.
+const RETIRED = ['harness-shell', 'docs-reference-shell', 'harness-body', 'technical-body',
+                 'harness-main', 'technical-main', 'docs-reference-nav', 'mountHeader'];
+
+test('every documentation page is built from the one template', () => {
+  assert.ok(docPages.length >= 7, `expected the documentation set, found ${docPages.length}`);
+  for (const page of docPages) {
+    const html = readFileSync(page, 'utf8');
+    const sheets = [...html.matchAll(/<link rel="stylesheet" href="\/shared\/([a-z.]+\.css)/g)].map(m => m[1]);
+    assert.deepEqual(sheets, ['fonts.css', 'tailwind.css', 'ui.css', 'docs.css'],
+      `${page} loads a different set of stylesheets, so a component rule applies here and not there`);
+    assert.match(html, /<body class="docs-body">/, `${page} does not use the one body class`);
+    assert.match(html, /mountDocsHeader\(/, `${page} does not mount the shared masthead`);
+  }
+});
+
+// Comments are where the retired names belong: the reason a rule exists is often
+// the thing it replaced. Strip them, so this reads code and not prose.
+const withoutComments = source => source
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^\s*\/\/.*$/gm, '');
+
+test('no page has started a template of its own', () => {
+  for (const page of [...docPages, 'shared/docs.css', 'shared/ui.js']) {
+    const source = withoutComments(readFileSync(page, 'utf8'));
+    const found = RETIRED.filter(name => source.includes(name));
+    assert.deepEqual(found, [], `${page} still refers to ${found.join(', ')}`);
+  }
+});
+
+test('the retired-template guard would actually catch a relapse', () => {
+  // stripping comments must not strip the code with them
+  assert.ok(withoutComments('/* .harness-shell was here */\n.docs-shell{color:red}')
+    .includes('.docs-shell{color:red}'));
+  for (const name of RETIRED) {
+    assert.ok(withoutComments(`.${name}{color:red}`).includes(name), `${name} would slip through`);
+  }
+});
+
+test('the documentation shell reserves the same three columns everywhere', () => {
+  // The third column carries a table of contents on the overview and nothing on
+  // the rest. Reserved either way: that is what keeps the sidebar and the reading
+  // column on identical pixels, so moving between pages shifts nothing.
+  const shell = readFileSync('shared/docs.css', 'utf8')
+    .match(/\.docs-shell\{([^}]*)\}/)?.[1] ?? '';
+  assert.match(shell, /grid-template-columns:var\(--docs-sidebar-width\) minmax\(0,var\(--docs-content-width\)\) var\(--docs-toc-width\)/,
+    'the shell no longer declares all three columns');
+
+  for (const page of docPages.filter(p => readFileSync(p, 'utf8').includes('class="docs-shell"'))) {
+    const html = readFileSync(page, 'utf8');
+    assert.match(html, /<(aside|main)[^>]*class="docs-sidebar"|id="docsSidebar"/,
+      `${page} is missing the shared sidebar`);
+    assert.match(html, /<main class="docs-content">/, `${page} is missing the shared content column`);
+  }
+});
+
+test('product.css is imported unlayered', () => {
+  // A cascade layer here is a trap worth a test of its own: tailwind's preflight
+  // is unlayered, an unlayered rule beats a layered one at any specificity, and
+  // the whole design system would silently lose its borders and margins on every
+  // page that loads this file while index.html — which links product.css directly —
+  // kept them. One stylesheet must not behave two ways.
+  const docs = readFileSync('shared/docs.css', 'utf8');
+  assert.match(docs, /@import url\('\/shared\/product\.css[^']*'\);/,
+    'product.css is imported into a cascade layer again');
+});
+
 test('the create-another-event action only appears inside a workspace', () => {
   const html = readFileSync('index.html', 'utf8');
   const ui = readFileSync('shared/eventready-ui.js', 'utf8');

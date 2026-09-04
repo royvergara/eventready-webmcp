@@ -13,12 +13,12 @@
 <link rel="stylesheet" href="/shared/ui.css">
 <link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
-<body class="font-sans technical-body">
+<body class="docs-body">
 <div id="siteHeader"></div>
 
-<div class="docs-reference-shell">
+<div class="docs-shell">
 <aside id="docsSidebar"></aside>
-<main class="technical-main">
+<main class="docs-content">
   <div class="sheethead">
     <div class="sheethead-band">
       <p class="kicker"><span class="kicker-no">03</span>Source gradient</p>
@@ -94,9 +94,9 @@ import {
   TIERS, CAPABILITIES, can, readT0, readT1, readT2, readT3, draftInquiry, askEveryTier
 } from '/engine/adapters.js';
 import { toolHost } from '/shared/webmcp.js';
-import { mountHeader, mountDocsSidebar, badge, tierBadge, money, esc } from '/shared/ui.js';
+import { mountDocsHeader, mountDocsSidebar, badge, tierBadge, money, esc } from '/shared/ui.js';
 
-mountHeader('Source gradient');
+mountDocsHeader('Source gradient');
 mountDocsSidebar('Source gradient');
 
 // never rely on implicit id globals: `status`, `name`, `length` are window built-ins

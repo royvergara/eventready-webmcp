@@ -9,18 +9,6 @@ function openAtTop() {
   if (!location.hash && window.scrollY) window.scrollTo(0, 0);
 }
 
-export function mountHeader(active) {
-  openAtTop();
-
-  const el = document.getElementById('siteHeader');
-  if (!el) return;
-
-  el.innerHTML = docsHeader(active);
-
-  // Sit flush on the sheet until there is something underneath to lift off. The
-  // shadow goes on the wrapper, which is the element that actually sticks.
-}
-
 const docsDestinations = [
   { label: 'Overview', href: '/developers.html', pages: ['Overview', 'Documentation'] },
   { label: 'Tool reference', href: '/harness.html', pages: ['Tool harness', 'Technical planner'] },
@@ -69,10 +57,10 @@ export function mountDocsSidebar(active) {
     const current = item.pages.includes(active);
     return `<a href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.label}</a>`;
   }).join('');
-  el.className = 'docs-reference-nav';
+  el.className = 'docs-sidebar';
   el.setAttribute('aria-label', 'WebMCP reference');
-  el.innerHTML = `<nav><span>WebMCP reference</span>${links}</nav>
-    <div><span>Environment</span><strong><i></i> Production demo</strong><small>No credentials required</small></div>`;
+  el.innerHTML = `<nav><div><span>WebMCP reference</span>${links}</div></nav>
+    <footer><span>Environment</span><strong><i></i> Production demo</strong><small>No credentials required</small></footer>`;
 }
 
 export const badge = (kind, text) => `<span class="badge badge-${kind}">${text}</span>`;

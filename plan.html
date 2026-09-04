@@ -13,12 +13,12 @@
 <link rel="stylesheet" href="/shared/ui.css">
 <link rel="stylesheet" href="/shared/docs.css?v=50">
 </head>
-<body class="font-sans technical-body">
+<body class="docs-body">
 <div id="siteHeader"></div>
 
-<div class="docs-reference-shell">
+<div class="docs-shell">
 <aside id="docsSidebar"></aside>
-<main class="technical-main">
+<main class="docs-content">
   <div class="sheethead">
     <div class="sheethead-band">
       <p class="kicker"><span class="kicker-no">02</span>Planner</p>
@@ -153,9 +153,9 @@ import { parseOccasion, assemblePlan, revisePlan, replan, buildOptions, ownershi
 import { runChecks } from '/engine/engine.js';
 import { CHECKS as CHECK_LABELS } from '/engine/replan.js';
 import { toolHost } from '/shared/webmcp.js';
-import { mountHeader, mountDocsSidebar, badge, tierBadge, money, label, esc } from '/shared/ui.js';
+import { mountDocsHeader, mountDocsSidebar, badge, tierBadge, money, label, esc } from '/shared/ui.js';
 
-mountHeader('Technical planner');
+mountDocsHeader('Technical planner');
 mountDocsSidebar('Technical planner');
 
 // never rely on implicit id globals: `status`, `name`, `length` are window built-ins

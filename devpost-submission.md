@@ -55,7 +55,7 @@ EventReady is a dependency-free static application. Pure planning and trust modu
 4. Review the ownership proposal in Coordinate, then resolve the delivery blocker in Prepare.
 5. Confirm the event becomes **Ready** and Run contains a chronological plan with no unassigned owner.
 6. Open `/developers.html` for the product's WebMCP explanation or `/judge.html` for the direct verification path.
-7. Locally, run `npm test` for 204 deterministic tests, `npm run smoke` for the submission preflight, and `npm run dev` for the static site.
+7. Locally, run `npm test` for 209 deterministic tests, `npm run smoke` for the submission preflight, and `npm run dev` for the static site.
 
 Tested locally with the Codex/ChatGPT in-app browser's native WebMCP support. Local verification found all nine registered contracts, completed the canonical flow, and produced no console errors. Production is reverified after each release with the submission smoke suite.
 
@@ -85,7 +85,7 @@ The complete timed narration, exact click order, native-WebMCP prompt, preflight
 
 - Live app: deployed and verified on production.
 - Public repo: pushed with source, setup instructions, and MIT license.
-- Tests: 204/204 passing.
+- Tests: 209/209 passing.
 - Native WebMCP: eight outcome tools and one demo utility discovered in the in-app browser. A clean production rehearsal selected a plan, changed service level, assigned all unresolved work, reached a 100% Ready report, produced a ready run-of-show, and left visible agent receipts with zero console errors.
 - Devpost account: authenticated and registered for The WebMCP Challenge.
 - Remaining hard requirement: public narrated YouTube demo under three minutes.

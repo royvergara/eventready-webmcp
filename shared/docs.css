@@ -1,25 +1,33 @@
-/* Canonical entrypoint for every EventReady documentation and WebMCP utility page. */
-@import url('/shared/product.css?v=50') layer(product-foundation);
+/* Canonical entrypoint for every EventReady documentation and WebMCP utility page.
+   One template: one body class, one shell, one sidebar, one content column, one
+   title scale. engine/styles.test.mjs asserts every page uses them.
+
+   NOT `layer(product-foundation)`. Putting product.css in a cascade layer sounds
+   tidy and is a trap: Tailwind's preflight is unlayered, and an unlayered rule
+   beats a layered one whatever its specificity. So every border, margin and list
+   padding product.css set was silently dropped on exactly the pages that loaded
+   this file — .docs-sidebar lost its right border, .docs-toc its left, headings
+   their margins — while index.html, which links product.css directly, kept all of
+   them. One stylesheet behaving two ways is what let these pages drift apart. */
+@import url('/shared/product.css?v=50');
 
 :root{
   --docs-header-height:7.5rem;
   --docs-sidebar-width:230px;
   --docs-content-width:780px;
   --docs-toc-width:190px;
-  /* One frame, shared by the masthead and every shell below it. The masthead ran
-     full bleed while the shells centred themselves inside their own max-width, so
-     on a wide screen the wordmark sat against the page edge and the sidebar began
-     roughly three hundred pixels further in, with nothing in between. They are the
-     same column now, so the brand always sits directly above the sidebar.
-     --docs-align is the full-bleed centring idiom: the element still spans the
-     window, so a rule or a background reaches both edges, while its content lines
-     up with the frame. */
+  /* One frame, shared by the masthead and the shell. The masthead ran full bleed
+     while the shells centred themselves inside their own max-width, so on a wide
+     screen the wordmark sat against the page edge and the sidebar began roughly
+     three hundred pixels further in. --docs-align is the full-bleed centring
+     idiom: the element still spans the window, so a rule or a background reaches
+     both edges, while its content lines up with the frame. */
   --docs-measure:calc(var(--docs-sidebar-width) + var(--docs-content-width) + var(--docs-toc-width));
   --docs-gutter:clamp(var(--space-4),4vw,3rem);
   --docs-align:max(var(--docs-gutter),calc((100% - var(--docs-measure)) / 2));
 }
 
-.docs-body,.harness-body,.technical-body{
+.docs-body{
   --docs-header:var(--docs-header-height);
   margin:0;
   background:var(--color-surface);
@@ -28,7 +36,11 @@
   font-family:var(--sans);
 }
 
-#siteHeader{position:sticky;z-index:50;top:0;min-height:var(--docs-header-height);background:transparent}
+/* --- masthead ------------------------------------------------------------- */
+/* border:0 retires the 2px carbon rule ui.css draws across the old masthead. It
+   is the same #siteHeader id, so the pages that link ui.css wore a blue stripe
+   the pages that do not never had. */
+#siteHeader{position:sticky;z-index:50;top:0;min-height:var(--docs-header-height);border:0;background:transparent}
 .docs-site-header{display:grid;grid-template-rows:4.5rem 3rem;border-bottom:1px solid var(--color-border);background:color-mix(in srgb,var(--color-surface) 97%,transparent);backdrop-filter:blur(14px)}
 .docs-site-topline{display:flex;align-items:center;justify-content:space-between;gap:var(--space-6);padding-inline:var(--docs-align)}
 .docs-site-header .docs-product-link{display:inline-flex;align-items:center;gap:var(--space-1);min-height:2.5rem;padding-inline:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-sm);color:var(--color-text);font-size:var(--type-caption);font-weight:var(--weight-strong);text-decoration:none}
@@ -41,54 +53,73 @@
 .docs-site-nav a[aria-current="page"]{color:var(--color-text);font-weight:var(--weight-strong)}
 .docs-site-nav a[aria-current="page"]::after{position:absolute;right:0;bottom:-1px;left:0;height:2px;background:var(--color-brand);content:""}
 
-.docs-shell,.harness-shell,.docs-reference-shell{max-width:none;margin-inline:0;padding-inline:var(--docs-align)}
-.docs-shell{grid-template-columns:var(--docs-sidebar-width) minmax(0,var(--docs-content-width)) var(--docs-toc-width)}
-.docs-sidebar,.docs-toc,.docs-reference-nav{top:var(--docs-header-height);height:calc(100dvh - var(--docs-header-height));background:var(--color-surface)}
-.docs-sidebar,.docs-reference-nav{border-color:var(--color-border)}
-.docs-sidebar>nav>div>span,.docs-reference-nav nav>span,.docs-reference-nav>div>span{color:var(--color-text-soft);font-size:var(--type-label)}
-.docs-sidebar nav a,.docs-reference-nav nav a{color:var(--color-text-muted);font-size:var(--type-caption);line-height:1.45}
-.docs-sidebar nav a:hover,.docs-sidebar nav a:focus-visible,.docs-reference-nav nav a:hover,.docs-reference-nav nav a:focus-visible{background:var(--color-brand-subtle);color:var(--color-brand)}
-.docs-sidebar nav a[aria-current],.docs-reference-nav nav a[aria-current]{color:var(--color-text);font-weight:var(--weight-strong)}
-.docs-sidebar footer{padding-inline:0}
-.docs-toc{border-color:var(--color-border)}
+/* --- shell ---------------------------------------------------------------- */
+/* Three columns on every page. The third is reserved even where a page has no
+   table of contents, so the sidebar and the reading column land on identical
+   pixels throughout and moving between pages shifts nothing. */
+.docs-shell{display:grid;grid-template-columns:var(--docs-sidebar-width) minmax(0,var(--docs-content-width)) var(--docs-toc-width);justify-content:start;max-width:none;margin-inline:0;padding-inline:var(--docs-align)}
+
+/* --- sidebar -------------------------------------------------------------- */
+/* One component. It was two — a hand-written .docs-sidebar on the overview and a
+   .docs-reference-nav mounted by script everywhere else — with two sets of rules
+   that had already drifted on padding and on the current-item marker. */
+.docs-sidebar{position:sticky;top:var(--docs-header-height);align-self:start;display:flex;flex-direction:column;height:calc(100dvh - var(--docs-header-height));padding:var(--space-8) var(--space-5) var(--space-5);border-right:1px solid var(--color-border);background:var(--color-surface)}
+.docs-sidebar>nav{display:grid;gap:var(--space-6);padding:0}
+.docs-sidebar>nav>div{display:grid;gap:var(--space-1)}
+.docs-sidebar>nav>div>span{padding:0 var(--space-3) var(--space-2);color:var(--color-text-soft);font-size:var(--type-label);font-weight:var(--weight-strong);text-transform:uppercase;letter-spacing:.08em}
+.docs-sidebar nav a{position:relative;padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);color:var(--color-text-muted);font-size:var(--type-caption);font-weight:var(--weight-medium);line-height:1.45;text-decoration:none}
+.docs-sidebar nav a:hover,.docs-sidebar nav a:focus-visible{background:var(--color-brand-subtle);color:var(--color-brand)}
+.docs-sidebar nav a[aria-current]{background:transparent;color:var(--color-text);font-weight:var(--weight-strong)}
+.docs-sidebar nav a[aria-current]::before{position:absolute;top:var(--space-2);bottom:var(--space-2);left:calc(-1 * var(--space-5) - 1px);width:2px;background:var(--color-brand);content:""}
+.docs-sidebar footer{display:grid;gap:var(--space-2);margin-top:auto;padding:var(--space-4) var(--space-3) 0;border-top:1px solid var(--color-border)}
+.docs-sidebar footer>span{padding:0;color:var(--color-text-soft);font-size:var(--type-label);font-weight:var(--weight-strong);text-transform:uppercase;letter-spacing:.08em}
+.docs-sidebar footer strong{display:flex;align-items:center;gap:var(--space-2);font-size:var(--type-caption)}
+.docs-sidebar footer strong i{width:.45rem;height:.45rem;border-radius:50%;background:var(--color-success)}
+.docs-sidebar footer small{color:var(--color-text-muted);font-size:var(--type-label)}
+
+/* --- content -------------------------------------------------------------- */
+.docs-content{min-width:0;width:100%;max-width:none;padding:var(--space-10) clamp(var(--space-6),5vw,4rem) 6rem}
+/* the overview wraps its sections in <article>; the padding belongs to the column */
+.docs-content>article{width:100%;padding:0}
+.docs-toc{top:var(--docs-header-height);height:calc(100dvh - var(--docs-header-height));border-color:var(--color-border);background:var(--color-surface)}
 .docs-toc>strong{font-size:var(--type-caption)}
 .docs-toc nav a,.docs-edit-link{font-size:var(--type-label);line-height:1.5}
 .docs-mobile-nav{top:var(--docs-header-height)}
 
+/* --- page opener ---------------------------------------------------------- */
+/* One title scale. The reference pages were a step down from the overview, so a
+   heading changed size when you clicked between them. */
 .docs-section{scroll-margin-top:calc(var(--docs-header-height) + 1rem)}
-.docs-intro h1,.harness-intro h1,.judge-hero h1,.technical-body .sheethead h1{font-family:var(--display);font-size:var(--type-title-1);font-weight:590;line-height:var(--leading-tight);letter-spacing:-.035em}
+.docs-intro h1,.harness-intro h1,.judge-hero h1,.docs-body .sheethead h1{font-family:var(--display);font-size:var(--type-title-1);font-weight:590;line-height:var(--leading-tight);letter-spacing:-.035em;max-width:none}
 .docs-section h2,.judge-path h2,.judge-proof h2,.judge-evidence h2,.judge-trust h2{font-family:var(--display);font-size:var(--type-title-2);font-weight:600;line-height:1.1;letter-spacing:-.03em}
-.docs-section>p,.docs-lede,.harness-intro>p:last-child,.technical-body .lede{max-width:var(--content-measure);color:var(--color-text-muted);font-size:var(--type-body);line-height:var(--leading-body)}
+.docs-section>p,.docs-lede,.harness-intro>p:last-child,.docs-body .lede{max-width:var(--content-measure);color:var(--color-text-muted);font-size:var(--type-body);line-height:var(--leading-body)}
 .docs-path,.harness-intro>p:first-child{font-size:var(--type-label)!important}
 .docs-lede,.harness-intro>p:last-child{font-size:var(--type-lede)!important}
 .docs-status-line,.docs-summary dd,.architecture-flow span,.docs-steps li>span,.docs-steps p,.tool-table-head,.tool-kind,.docs-section pre{font-size:var(--type-label)}
 .architecture-flow strong,.architecture-flow>b,.docs-note strong,.docs-note p,.docs-steps strong,.tool-table code,.tool-table p,.docs-caption,.state-rules strong,.state-rules p,.docs-checklist strong,.docs-checklist span,.verification-grid strong,.verification-grid span,.docs-resources dt,.docs-resources dd{font-size:var(--type-caption)!important;line-height:1.55}
 
-.harness-shell,.docs-reference-shell{display:grid;grid-template-columns:var(--docs-sidebar-width) minmax(0,1fr)}
-.docs-reference-nav{position:sticky;align-self:start;display:flex;flex-direction:column;padding:var(--space-8) var(--space-5) var(--space-5);border-right:1px solid var(--color-border)}
-.docs-reference-nav nav{display:grid;gap:var(--space-1)}
-.docs-reference-nav nav>span,.docs-reference-nav>div>span{padding:0 var(--space-3) var(--space-2);font-weight:var(--weight-strong);text-transform:uppercase;letter-spacing:.08em}
-.docs-reference-nav nav a{position:relative;padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);font-weight:var(--weight-medium);text-decoration:none}
-.docs-reference-nav nav a[aria-current]::before{position:absolute;top:var(--space-2);bottom:var(--space-2);left:calc(-1 * var(--space-5) - 1px);width:2px;background:var(--color-brand);content:""}
-.docs-reference-nav>div{display:grid;gap:var(--space-2);margin-top:auto;padding:var(--space-4) var(--space-3) 0;border-top:1px solid var(--color-border)}
-.docs-reference-nav>div>span{padding:0}
-.docs-reference-nav>div strong{display:flex;align-items:center;gap:var(--space-2);font-size:var(--type-caption)}
-.docs-reference-nav>div strong i{width:.45rem;height:.45rem;border-radius:50%;background:var(--color-success)}
-.docs-reference-nav>div small{color:var(--color-text-muted);font-size:var(--type-label)}
-.harness-main,.technical-body .technical-main{min-width:0;width:100%;max-width:none;padding:var(--space-10) clamp(var(--space-6),5vw,4rem) 6rem}
-.harness-intro,.technical-body .sheethead{max-width:46rem}
-.harness-intro h1,.technical-body .sheethead h1{font-size:clamp(2.6rem,4vw,3.4rem)}
-.harness-output{top:calc(var(--docs-header-height) + var(--space-5))}
-.harness-tools,.harness-output,.technical-body .chit{border-color:var(--color-border);border-radius:var(--radius-md);background:var(--color-surface)}
-.harness-panel-head,.technical-body .chit-head{background:var(--color-surface-subtle)}
-.harness-panel-head>div>span,.harness-panel-head>span,.harness-body .toolsum-note,.harness-body .toolsum .btn,.harness-output .readout,.technical-body .kicker,.technical-body .sheethead-meta,.technical-body .chit-note{font-size:var(--type-label)}
+/* --- page-specific components, all inside the one body class -------------- */
+/* The workbench was two panels side by side, sized for the 970px column the
+   harness used to have to itself. In the shared reading measure its second panel
+   still demanded min 320px, which squeezed the registry to about 310 and ran the
+   tool names into their argument counts. Stacked, the registry gets the full
+   measure and the response sits under it — which is where showOutput() already
+   scrolls the answer on a narrow window. */
+.harness-workbench{grid-template-columns:minmax(0,1fr)}
+.harness-output{position:static}
+.harness-output .readout{min-height:16rem;max-height:32rem}
+.harness-tools,.harness-output,.docs-body .chit{border-color:var(--color-border);border-radius:var(--radius-md);background:var(--color-surface)}
+.harness-panel-head,.docs-body .chit-head{background:var(--color-surface-subtle)}
+.harness-panel-head>div>span,.harness-panel-head>span,.docs-body .toolsum-note,.docs-body .toolsum .btn,.harness-output .readout,.docs-body .kicker,.docs-body .sheethead-meta,.docs-body .chit-note{font-size:var(--type-label)}
 .harness-panel-head h2{font-size:var(--type-body)}
-.harness-page-picker>span,.harness-page-picker .field,.harness-body .tool-name,.harness-body .toolbody>p,.technical-body .chit-title{font-size:var(--type-caption)!important;line-height:1.55}
-.harness-body .toolsum{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(7.5rem,auto) auto;align-items:center;column-gap:var(--space-3)}
-.harness-body .toolsum-note{justify-self:end;text-align:right}
-.harness-body .toolsum .btn{justify-self:end;margin-left:0}
-.technical-body .sheethead h1{max-width:16ch;text-wrap:pretty}
-.technical-body .field{min-height:var(--control-height);border-color:var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text)}
+.harness-page-picker>span,.harness-page-picker .field,.docs-body .tool-name,.docs-body .toolbody>p,.docs-body .chit-title{font-size:var(--type-caption)!important;line-height:1.55}
+.docs-body .toolsum{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(7.5rem,auto) auto;align-items:center;column-gap:var(--space-3)}
+.docs-body .toolsum-note{justify-self:end;text-align:right}
+.docs-body .toolsum .btn{justify-self:end;margin-left:0}
+.docs-body .field{min-height:var(--control-height);border-color:var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text)}
+
+/* --- judge: no sidebar, same frame ---------------------------------------- */
+.judge-view{max-width:none;margin:0;padding-inline:var(--docs-align)}
 
 @media(max-width:767px){
   :root{--docs-header-height:7rem}
@@ -102,11 +133,11 @@
   .docs-mobile-nav{top:var(--docs-header-height)}
   .docs-section{scroll-margin-top:calc(var(--docs-header-height) + 3rem)}
   .docs-lede,.harness-intro>p:last-child{font-size:var(--type-body)!important}
-  .harness-body .toolsum{grid-template-columns:auto minmax(0,1fr) auto;column-gap:var(--space-2)}
-  .harness-body .toolsum-note{grid-column:2;justify-self:start;text-align:left}
-  .harness-body .toolsum .btn{grid-column:3;grid-row:1/3}
-  .docs-shell,.harness-shell,.docs-reference-shell{padding-inline:0}
-  .harness-shell,.docs-reference-shell{display:block}
-  .docs-reference-nav{display:none}
-  .harness-main,.technical-body .technical-main{padding:var(--space-8) var(--space-4) 4rem}
+  .docs-body .toolsum{grid-template-columns:auto minmax(0,1fr) auto;column-gap:var(--space-2)}
+  .docs-body .toolsum-note{grid-column:2;justify-self:start;text-align:left}
+  .docs-body .toolsum .btn{grid-column:3;grid-row:1/3}
+  .docs-shell{display:block;padding-inline:0}
+  .docs-sidebar{display:none}
+  .docs-content{padding:var(--space-8) var(--space-4) 4rem}
+  .judge-view{padding-inline:var(--space-4)}
 }
