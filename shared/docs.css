@@ -25,6 +25,13 @@
   --docs-measure:calc(var(--docs-sidebar-width) + var(--docs-content-width) + var(--docs-toc-width));
   --docs-gutter:clamp(var(--space-4),4vw,3rem);
   --docs-align:max(var(--docs-gutter),calc((100% - var(--docs-measure)) / 2));
+  /* The page opener — eyebrow, title, lede — in one rhythm. Three page types had
+     grown three of everything: the eyebrow was Plex Sans on two pages and Plex
+     Mono on the rest, the gap beneath it was 14, 16 or 22px, the gap beneath the
+     title 11 or 19, and the overview alone dropped 4.4rem before its eyebrow. */
+  --lockup-eyebrow-gap:var(--space-3);
+  --lockup-lede-gap:var(--space-4);
+  --lockup-end-gap:var(--space-10);
 }
 
 .docs-body{
@@ -54,10 +61,13 @@
 .docs-site-nav a[aria-current="page"]::after{position:absolute;right:0;bottom:-1px;left:0;height:2px;background:var(--color-brand);content:""}
 
 /* --- shell ---------------------------------------------------------------- */
-/* Three columns on every page. The third is reserved even where a page has no
-   table of contents, so the sidebar and the reading column land on identical
-   pixels throughout and moving between pages shifts nothing. */
-.docs-shell{display:grid;grid-template-columns:var(--docs-sidebar-width) minmax(0,var(--docs-content-width)) var(--docs-toc-width);justify-content:start;max-width:none;margin-inline:0;padding-inline:var(--docs-align)}
+/* One frame, three slots: a fixed sidebar, content that takes whatever is left,
+   and a table of contents that occupies width only where a page has one. The
+   third track is `auto`, so on a page without a table of contents it collapses
+   to nothing and the content flows into it rather than sitting beside a reserved
+   strip of dead space. The sidebar and the content's left edge are identical on
+   every page either way — only the content's right edge moves. */
+.docs-shell{display:grid;grid-template-columns:var(--docs-sidebar-width) minmax(0,1fr) auto;justify-content:start;max-width:none;margin-inline:0;padding-inline:var(--docs-align)}
 
 /* --- sidebar -------------------------------------------------------------- */
 /* One component. It was two — a hand-written .docs-sidebar on the overview and a
@@ -81,7 +91,7 @@
 .docs-content{min-width:0;width:100%;max-width:none;padding:var(--space-10) clamp(var(--space-6),5vw,4rem) 6rem}
 /* the overview wraps its sections in <article>; the padding belongs to the column */
 .docs-content>article{width:100%;padding:0}
-.docs-toc{top:var(--docs-header-height);height:calc(100dvh - var(--docs-header-height));border-color:var(--color-border);background:var(--color-surface)}
+.docs-toc{width:var(--docs-toc-width);top:var(--docs-header-height);height:calc(100dvh - var(--docs-header-height));border-color:var(--color-border);background:var(--color-surface)}
 .docs-toc>strong{font-size:var(--type-caption)}
 .docs-toc nav a,.docs-edit-link{font-size:var(--type-label);line-height:1.5}
 .docs-mobile-nav{top:var(--docs-header-height)}
@@ -90,7 +100,26 @@
 /* One title scale. The reference pages were a step down from the overview, so a
    heading changed size when you clicked between them. */
 .docs-section{scroll-margin-top:calc(var(--docs-header-height) + 1rem)}
-.docs-intro h1,.harness-intro h1,.judge-hero h1,.docs-body .sheethead h1{font-family:var(--display);font-size:var(--type-title-1);font-weight:590;line-height:var(--leading-tight);letter-spacing:-.035em;max-width:none}
+
+/* every eyebrow, whatever the page calls it, is the same stamp — and it is the
+   same language as the sidebar's section labels, which are already mono caps */
+.docs-path,.harness-intro>p:first-child,.docs-body .kicker,.judge-hero>div>p:first-child{
+  margin:0 0 var(--lockup-eyebrow-gap)!important;
+  color:var(--color-text-soft);
+  font-family:var(--mono);
+  font-size:var(--type-label)!important;
+  font-weight:var(--weight-medium);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+/* where the eyebrow shares a ruled line with a count, the gap belongs to the
+   line and the eyebrow inside it sits flush */
+.docs-body .sheethead-band{margin:0 0 var(--lockup-eyebrow-gap);padding-bottom:var(--space-2)}
+.docs-body .sheethead-band .kicker{margin-bottom:0!important}
+.docs-intro,.harness-intro,.docs-body .sheethead,.judge-hero>div{padding-top:0}
+.docs-intro,.harness-intro,.docs-body .sheethead{margin-bottom:var(--lockup-end-gap)}
+.docs-intro h1,.harness-intro h1,.judge-hero h1,.docs-body .sheethead h1{margin:0 0 var(--lockup-lede-gap);font-family:var(--display);font-size:var(--type-title-1);font-weight:590;line-height:var(--leading-tight);letter-spacing:-.035em;max-width:none}
+.docs-lede,.harness-intro>p:last-child,.docs-body .lede,.judge-hero>div>span{margin:0!important}
 .docs-section h2,.judge-path h2,.judge-proof h2,.judge-evidence h2,.judge-trust h2{font-family:var(--display);font-size:var(--type-title-2);font-weight:600;line-height:1.1;letter-spacing:-.03em}
 .docs-section>p,.docs-lede,.harness-intro>p:last-child,.docs-body .lede{max-width:var(--content-measure);color:var(--color-text-muted);font-size:var(--type-body);line-height:var(--leading-body)}
 .docs-path,.harness-intro>p:first-child{font-size:var(--type-label)!important}
@@ -99,15 +128,7 @@
 .architecture-flow strong,.architecture-flow>b,.docs-note strong,.docs-note p,.docs-steps strong,.tool-table code,.tool-table p,.docs-caption,.state-rules strong,.state-rules p,.docs-checklist strong,.docs-checklist span,.verification-grid strong,.verification-grid span,.docs-resources dt,.docs-resources dd{font-size:var(--type-caption)!important;line-height:1.55}
 
 /* --- page-specific components, all inside the one body class -------------- */
-/* The workbench was two panels side by side, sized for the 970px column the
-   harness used to have to itself. In the shared reading measure its second panel
-   still demanded min 320px, which squeezed the registry to about 310 and ran the
-   tool names into their argument counts. Stacked, the registry gets the full
-   measure and the response sits under it — which is where showOutput() already
-   scrolls the answer on a narrow window. */
-.harness-workbench{grid-template-columns:minmax(0,1fr)}
-.harness-output{position:static}
-.harness-output .readout{min-height:16rem;max-height:32rem}
+.harness-output{top:calc(var(--docs-header-height) + var(--space-5))}
 .harness-tools,.harness-output,.docs-body .chit{border-color:var(--color-border);border-radius:var(--radius-md);background:var(--color-surface)}
 .harness-panel-head,.docs-body .chit-head{background:var(--color-surface-subtle)}
 .harness-panel-head>div>span,.harness-panel-head>span,.docs-body .toolsum-note,.docs-body .toolsum .btn,.harness-output .readout,.docs-body .kicker,.docs-body .sheethead-meta,.docs-body .chit-note{font-size:var(--type-label)}
@@ -119,7 +140,7 @@
 .docs-body .field{min-height:var(--control-height);border-color:var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text)}
 
 /* --- judge: no sidebar, same frame ---------------------------------------- */
-.judge-view{max-width:none;margin:0;padding-inline:var(--docs-align)}
+.judge-view{max-width:none;margin:0;padding-block:var(--space-10) 6rem;padding-inline:var(--docs-align)}
 
 @media(max-width:767px){
   :root{--docs-header-height:7rem}

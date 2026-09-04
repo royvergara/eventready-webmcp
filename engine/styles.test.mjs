@@ -68,14 +68,17 @@ test('the retired-template guard would actually catch a relapse', () => {
   }
 });
 
-test('the documentation shell reserves the same three columns everywhere', () => {
-  // The third column carries a table of contents on the overview and nothing on
-  // the rest. Reserved either way: that is what keeps the sidebar and the reading
-  // column on identical pixels, so moving between pages shifts nothing.
-  const shell = readFileSync('shared/docs.css', 'utf8')
-    .match(/\.docs-shell\{([^}]*)\}/)?.[1] ?? '';
-  assert.match(shell, /grid-template-columns:var\(--docs-sidebar-width\) minmax\(0,var\(--docs-content-width\)\) var\(--docs-toc-width\)/,
-    'the shell no longer declares all three columns');
+test('the documentation shell gives content the room a page does not use', () => {
+  // Fixed sidebar, content takes what is left, table of contents sized only where
+  // a page has one. The third track must stay `auto`: pinned to a width it leaves
+  // a strip of dead space down the side of every page without a table of
+  // contents, which is what it used to do.
+  const docs = readFileSync('shared/docs.css', 'utf8');
+  const shell = docs.match(/\.docs-shell\{([^}]*)\}/)?.[1] ?? '';
+  assert.match(shell, /grid-template-columns:var\(--docs-sidebar-width\) minmax\(0,1fr\) auto/,
+    'the shell no longer lets content take the space a table of contents does not');
+  assert.match(docs, /\.docs-toc\{width:var\(--docs-toc-width\)/,
+    'the table of contents must carry its own width now the track does not');
 
   for (const page of docPages.filter(p => readFileSync(p, 'utf8').includes('class="docs-shell"'))) {
     const html = readFileSync(page, 'utf8');
@@ -83,6 +86,26 @@ test('the documentation shell reserves the same three columns everywhere', () =>
       `${page} is missing the shared sidebar`);
     assert.match(html, /<main class="docs-content">/, `${page} is missing the shared content column`);
   }
+});
+
+test('the page opener is one lockup on every page', () => {
+  // eyebrow, title, lede. The three page types had grown three of everything: the
+  // eyebrow was Plex Sans on two pages and Plex Mono on the rest, the gap under it
+  // was 14, 16 or 22px, the gap under the title 11 or 19, and the overview alone
+  // dropped 4.4rem before its eyebrow.
+  const docs = readFileSync('shared/docs.css', 'utf8');
+  for (const token of ['--lockup-eyebrow-gap', '--lockup-lede-gap', '--lockup-end-gap']) {
+    assert.ok(docs.includes(`${token}:`), `${token} is no longer defined`);
+    assert.ok(docs.split(`var(${token})`).length > 1, `${token} is defined but never used`);
+  }
+  // one eyebrow rule covering all three of the names the pages give it
+  const eyebrow = docs.match(/\.docs-path,[^{]*\{([^}]*)\}/)?.[1] ?? '';
+  for (const name of ['harness-intro', 'kicker']) {
+    assert.ok(docs.match(/\.docs-path,([^{]*)\{/)?.[1].includes(name),
+      `the eyebrow rule no longer covers .${name}, so that page can drift`);
+  }
+  assert.match(eyebrow, /font-family:var\(--mono\)/, 'the eyebrow is no longer one face');
+  assert.match(eyebrow, /var\(--lockup-eyebrow-gap\)/, 'the eyebrow gap is no longer tokenised');
 });
 
 test('product.css is imported unlayered', () => {
