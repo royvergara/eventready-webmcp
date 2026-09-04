@@ -964,9 +964,11 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 /* Three cards of very different heights in a row-aligned grid meant the short
    ones left a hole the height of the tallest card beside them. Columns let each
    card sit directly under the one above it. */
-.responsibility-groups{display:block;columns:3;column-gap:1rem}
+/* Two columns, not three. With four cards of very unequal height the third
+   never filled, so the set stopped two thirds across and did not line up with
+   the full-width team card above it. */
+.responsibility-groups{display:block;columns:2;column-gap:1rem}
 .responsibility-groups>*{display:inline-block;width:100%;margin:0 0 1rem;break-inside:avoid}
-@media(max-width:1100px){.responsibility-groups{columns:2}}
 @media(max-width:760px){.responsibility-groups{columns:1}}
 
 /* --muted is tuned for the paper background; on the champagne draft banner it
