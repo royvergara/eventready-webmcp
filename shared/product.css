@@ -860,7 +860,15 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .run-sheet .run-segment>header small{color:var(--muted);font-family:var(--mono);font-size:.6rem}
 /* the spine runs between the first and last marker of the segment, and the check
    buttons are the markers, so completing an item marks the timeline itself */
-.run-sheet .run-row:not(:last-child)::before{content:"";position:absolute;z-index:0;left:2rem;top:2.6rem;bottom:-.8rem;width:1px;background:var(--line)}
+/* The connector is drawn as two pieces, both contained by their own row. A
+   single line overhanging into the next row got painted over by that row's
+   band, leaving a gap under every other marker. */
+.run-sheet .run-row:not(:last-of-type)::before{content:"";position:absolute;z-index:0;left:2rem;top:2.6rem;bottom:0;width:1px;background:var(--line)}
+.run-sheet .run-row:not(:first-of-type)::after{content:"";position:absolute;z-index:0;left:2rem;top:0;height:.8rem;width:1px;background:var(--line)}
+/* Banding. The row is wide enough that the time on the left and the owner on
+   the right are a screen apart; the band is what carries the eye across. Kept
+   to a 3.5% ink wash so body and muted text hold their contrast ratios. */
+.run-sheet .run-row:nth-of-type(even){background:color-mix(in srgb,var(--ink) 3.5%,transparent)}
 .run-sheet .run-row{position:relative;z-index:1;border-bottom:0;align-items:start}
 .run-sheet .run-check{justify-self:center;flex:none}
 .run-sheet .run-row time{align-self:center;color:var(--ink);font-family:var(--mono);font-size:.66rem;font-weight:600;text-align:right}
@@ -924,7 +932,8 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
   .run-table,.run-sheet{display:block!important;border:0;border-radius:0;background:none;box-shadow:none;margin:0;overflow:visible}
   .run-sheet .run-segment{position:static;padding:0 0 5mm;break-inside:auto}
   .run-sheet .run-segment+.run-segment{border-top:0;padding-top:4mm}
-  .run-sheet .run-row::before{display:none}
+  .run-sheet .run-row::before,.run-sheet .run-row::after{display:none}
+  .run-sheet .run-row:nth-of-type(even){background:none}
   .run-sheet .run-segment>header{display:flex;padding:0 0 1.5mm;margin:0 0 2mm;border-bottom:.75pt solid #111;break-after:avoid}
   .run-sheet .run-segment>header .kicker{color:#111;font-size:8.5pt;font-weight:700;letter-spacing:.14em}
   .run-sheet .run-segment>header small{color:#555;font-size:8pt}
@@ -1025,11 +1034,16 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
    re-entering the five-step brief, and not removed at all. */
 .event-title-actions{display:flex;gap:.4rem}
 .event-title-actions .quiet-button{padding:.28rem .6rem;font-size:.62rem}
-.rename-event{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin:.15rem 0 .35rem}
-.rename-event input{min-width:min(20rem,100%);padding:.45rem .6rem;border:1px solid var(--rule-strong,#b9c1cc);border-radius:.5rem;
+.rename-event{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:.15rem 0 .35rem}
+/* The input shrinks before the row wraps, so Save and Cancel stay together on
+   one line instead of Cancel dropping underneath. */
+.rename-event input{flex:1 1 12rem;min-width:0;max-width:28rem;padding:.45rem .6rem;border:1px solid var(--rule-strong,#b9c1cc);border-radius:.5rem;
   background:var(--paper-card,#fff);color:var(--ink);font-family:var(--display);font-size:1.35rem;font-weight:560}
 .rename-event input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
-.rename-event .primary-button,.rename-event .quiet-button{padding:.4rem .7rem;font-size:.66rem}
+.rename-event .primary-button{flex:none;padding:.4rem .7rem;font-size:.66rem}
+.link-button{flex:none;padding:.4rem .2rem;border:0;background:none;color:var(--muted);font-size:.66rem;font-weight:650;text-decoration:underline;text-underline-offset:.2em;text-decoration-color:color-mix(in srgb,var(--muted) 40%,transparent)}
+.link-button:hover{color:var(--accent);text-decoration-color:currentColor}
+.link-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:.25rem}
 .primary-button.danger{background:var(--status-blocked);border-color:var(--status-blocked)}
 /* the back link and the event's own actions share one row above the title */
 .event-toolbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
