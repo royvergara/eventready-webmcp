@@ -276,7 +276,7 @@ body{color:var(--ink);background:var(--canvas)}
 @media(max-width:767px){.app-header .nav-link{display:inline-block}.saved-event{grid-template-columns:3rem 1fr auto}.saved-event-status{display:none}.provider-legend{grid-template-columns:1fr}.next-action{align-items:flex-start;flex-direction:column}.next-action button{width:100%}.ready-preview{grid-template-columns:1fr}.plan-ready-sheet{margin:auto 1rem}.help-sheet footer{align-items:stretch;flex-direction:column}.help-sheet footer .primary-button{width:100%}}
 
 /* Coordinated Confidence brand layer */
-:root{--ink:#172034;--muted:#687083;--soft:#969bab;--line:#dddcd8;--canvas:#f8f7f4;--surface:#fffefa;--surface-2:#f3f1ec;--navy:#172034;--blue:#6658e8;--blue-soft:#f0edff;--coral:#df684c;--coral-soft:#fff0eb;--green:#16806a;--green-soft:#e8f6f1;--amber:#a06b21;--amber-soft:#fbf2df;--champagne:#f5ebdd;--accent:var(--blue);--accent-soft:var(--blue-soft);--font:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;--sans:var(--font);--display:'Fraunces',Georgia,serif;--mono:'IBM Plex Mono',ui-monospace,monospace;--shadow:0 24px 70px rgba(23,32,52,.09);--action-bar-height:4.5rem}
+:root{--ink:#172034;--muted:#687083;--soft:#969bab;--line:#dddcd8;--canvas:#f8f7f4;--surface:#fffefa;--surface-2:#f3f1ec;--navy:#172034;--blue:#6658e8;--blue-soft:#f0edff;--coral:#df684c;--coral-soft:#fff0eb;--green:#16806a;--green-soft:#e8f6f1;--amber:#a06b21;--amber-soft:#fbf2df;--champagne:#f5ebdd;--accent:var(--blue);--accent-soft:var(--blue-soft);--font:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;--sans:var(--font);--display:'Fraunces',Georgia,serif;--mono:'IBM Plex Mono',ui-monospace,monospace;--shadow:0 24px 70px rgba(23,32,52,.09);--action-bar-height:4.5rem;--accent-on-dark:#a99bf0;--status-blocked:var(--coral);--status-blocked-soft:var(--coral-soft);--status-confirm:var(--amber);--status-confirm-soft:var(--amber-soft);--status-ready:var(--green);--status-ready-soft:var(--green-soft)}
 body[data-event-type="wedding"]{--accent:#c45e55;--accent-soft:#fae9e4}body[data-event-type="work-event"]{--accent:#6658e8;--accent-soft:#f0edff}body[data-event-type="celebration"]{--accent:#df684c;--accent-soft:#fff0eb}body[data-event-type="community-event"]{--accent:#16806a;--accent-soft:#e8f6f1}
 html{background:var(--canvas)}.app-header{background:rgba(248,247,244,.94)}.brand>span{position:relative;overflow:visible;background:var(--ink);border-radius:50% 50% 46% 54%}.brand>span::after{content:"";position:absolute;width:1.15rem;height:.5rem;right:-.62rem;bottom:-.18rem;border-bottom:2px solid var(--accent);border-radius:50%;transform:rotate(-18deg)}.brand strong{font-family:var(--display);font-size:1.08rem;font-weight:620}.primary-button{background:var(--accent);box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 20%,transparent)}.primary-button:hover{background:color-mix(in srgb,var(--accent) 88%,#000)}.kicker,.sample-label{color:var(--accent);font-family:var(--mono)}
 .start-view{position:relative}.start-view::before{content:"";position:absolute;right:1.5rem;top:5.5rem;width:min(32vw,360px);height:180px;border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);border-left-color:transparent;border-radius:50%;transform:rotate(-12deg);pointer-events:none}.start-view::after{content:"";position:absolute;right:clamp(2rem,10vw,8rem);top:8rem;width:.7rem;height:.7rem;border-radius:50%;background:var(--accent);box-shadow:85px 55px 0 var(--champagne),170px 4px 0 color-mix(in srgb,var(--accent) 38%,transparent);pointer-events:none}.start-copy{position:relative;z-index:1}.start-copy h1{font-family:var(--display);font-weight:570;letter-spacing:-.055em;line-height:.92}.start-copy h1 em{color:var(--accent);font-weight:480}.start-copy p{font-size:1rem}.brief-composer{position:relative;z-index:1;border-color:#d6d2ca;background:rgba(255,254,250,.96)}.brief-composer::before{content:"";position:absolute;left:1.15rem;right:1.15rem;top:-1px;height:3px;border-radius:1rem;background:linear-gradient(90deg,var(--accent),var(--champagne),transparent)}.starter-chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}.section-intro h2{font-family:var(--display);font-weight:540}.output-grid{position:relative;background:var(--surface)}.output-grid::after{content:"";position:absolute;left:8%;right:8%;top:2.34rem;border-top:1px solid color-mix(in srgb,var(--accent) 32%,var(--line));z-index:0}.output-grid article{position:relative;z-index:1;background:transparent}.output-grid article>span{background:var(--surface);border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--accent)}.output-grid h3{font-family:var(--display);font-size:1.03rem;font-weight:560}.sample-plan,.saved-event{background:var(--surface)}
@@ -878,3 +878,93 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
    amber .prototype-note read as an alert about something being wrong. */
 .readiness-note{display:flex;align-items:flex-start;gap:.45rem;margin:.1rem 0 1.15rem;color:var(--muted);font-size:.62rem;line-height:1.55}
 .readiness-note .icon{margin-top:.15rem;opacity:.75}
+
+/* ---------------------------------------------------------------------------
+   Print: one document, not a screenshot of an application.
+
+   The old print rules were a deny-list naming .event-shell, .product-header and
+   .workspace-view[data-view="dayof"] — classes this markup stopped using some
+   redesigns ago — so most of the interface printed: the back link, the readiness
+   gauge, the at-a-glance panel, the Copy/Try-with-an-agent buttons, the phone-
+   sized "now in the plan" card, even the skip link. This is an allow-list
+   instead: the page prints the run of show and its own masthead, and nothing
+   else. --------------------------------------------------------------------- */
+@media print{
+  @page{margin:16mm 14mm}
+  html,body{background:#fff!important;background-image:none!important}
+  body{font-size:10pt}
+
+  /* application chrome has no business on paper */
+  .app-header,#siteHeader,.skip-link,.phase-rail,.app-footer,.event-header,
+  .event-briefing,#eventBriefing,.sample-agent-guide,#sampleAgentGuide,
+  .plan-activity,#planActivity,.next-action,.app-toast,.overlay,
+  .run-mobile-mode,.run-banner,.run-cover,.phase-head,.run-check,.run-actions{display:none!important}
+
+  /* only the run phase, and let its wrappers collapse */
+  .phase-view{display:none!important}
+  .phase-view[data-phase-view="run"]{display:block!important}
+  .workspace-view,.command-layout,.phase-canvas,main{display:block!important;max-width:none;margin:0;padding:0}
+
+  .run-print-head{display:block!important;margin:0 0 10mm;padding-bottom:4mm;border-bottom:1.5pt solid #111}
+  .run-print-kicker{margin:0 0 2mm;color:#555;font-family:var(--mono);font-size:8pt;letter-spacing:.16em;text-transform:uppercase}
+  .run-print-head h1{margin:0;font-family:var(--display);font-size:23pt;line-height:1.1;letter-spacing:-.02em}
+  .run-print-meta{margin:2mm 0 0;font-size:10.5pt}
+  .run-print-status{margin:1.5mm 0 0;color:#555;font-size:9pt}
+
+  /* the team, because a printed sheet is handed to people who need to reach them */
+  .run-contacts{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:3mm;margin:0 0 8mm;break-inside:avoid}
+  .run-contacts>.kicker{grid-column:1/-1;margin:0 0 1mm;color:#555;font-size:7.5pt;letter-spacing:.14em}
+  .run-contacts article{grid-template-columns:1fr;gap:.5mm;padding:2.5mm 3mm;border:.5pt solid #bbb;border-radius:0;background:none;box-shadow:none}
+  .run-contacts article>span{display:none}
+  .run-contacts strong{font-size:9.5pt}
+  .run-contacts small,.run-contacts a{color:#555;font-size:8.5pt}
+  .run-contacts a{justify-self:start;text-align:left;text-decoration:none}
+
+  /* the sheet */
+  .run-table,.run-sheet{display:block!important;border:0;border-radius:0;background:none;box-shadow:none;margin:0;overflow:visible}
+  .run-sheet .run-segment{position:static;padding:0 0 5mm;break-inside:auto}
+  .run-sheet .run-segment+.run-segment{border-top:0;padding-top:4mm}
+  .run-sheet .run-segment::before{display:none}
+  .run-sheet .run-segment>header{display:flex;padding:0 0 1.5mm;margin:0 0 2mm;border-bottom:.75pt solid #111;break-after:avoid}
+  .run-sheet .run-segment>header .kicker{color:#111;font-size:8.5pt;font-weight:700;letter-spacing:.14em}
+  .run-sheet .run-segment>header small{color:#555;font-size:8pt}
+  .run-sheet .run-row{display:grid!important;grid-template-columns:22mm 1fr 34mm!important;gap:4mm;align-items:baseline;
+    padding:1.8mm 0;border-bottom:.4pt dotted #bbb;break-inside:avoid;opacity:1}
+  .run-sheet .run-row time{color:#111;font-family:var(--mono);font-size:8.5pt;font-weight:700;text-align:left}
+  .run-sheet .run-row h4{font-family:var(--display);font-size:11pt;font-weight:600}
+  .run-sheet .run-row p{color:#555;font-size:8pt}
+  .run-sheet .run-owner{justify-self:start;padding:0;border-radius:0;background:none!important;color:#111!important;font-size:8.5pt;font-weight:600}
+  .run-sheet .run-owner .icon{display:none}
+  .run-sheet .run-row.complete{opacity:1}
+  .run-sheet .run-row.complete h4{text-decoration:line-through}
+}
+
+/* --- contrast on the dark surfaces --------------------------------------- */
+/* --accent is tuned for paper. On the navy gradient it measured 3.05:1 against
+   the lightest stop at 9.6-10.6px, which is below AA for text this size. This
+   lavender measures 5.27:1 on the same stop. */
+.service-brief .kicker,.service-brief .sample-label,
+.run-cover .kicker,.run-cover .sample-label,
+.confirmation-panel .kicker,.confirmation-panel .sample-label,
+.live-plan .kicker,.live-plan .sample-label{color:var(--accent-on-dark)}
+
+/* --- one status vocabulary ------------------------------------------------ */
+/* Blocked, Confirm and Ready already coloured their icons and said nothing with
+   the label beside them. Same three colours, same shape, wherever a status is
+   named. */
+.readiness-matrix b{padding:.16rem .5rem;border-radius:2rem;font-weight:700}
+.readiness-matrix article.blocked b{background:var(--status-blocked-soft);color:var(--status-blocked)}
+.readiness-matrix article.confirm b{background:var(--status-confirm-soft);color:var(--status-confirm)}
+.readiness-matrix article.ready b{background:var(--status-ready-soft);color:var(--status-ready)}
+.phase-status{background:var(--status-confirm-soft);color:var(--status-confirm)}
+.phase-status.done{background:var(--status-ready-soft);color:var(--status-ready)}
+.run-sheet .run-owner.unassigned{background:var(--status-confirm-soft);color:var(--status-confirm)}
+
+/* --- coordinate: let the stacks flow -------------------------------------- */
+/* Three cards of very different heights in a row-aligned grid meant the short
+   ones left a hole the height of the tallest card beside them. Columns let each
+   card sit directly under the one above it. */
+.responsibility-groups{display:block;columns:3;column-gap:1rem}
+.responsibility-groups>*{display:inline-block;width:100%;margin:0 0 1rem;break-inside:avoid}
+@media(max-width:1100px){.responsibility-groups{columns:2}}
+@media(max-width:760px){.responsibility-groups{columns:1}}

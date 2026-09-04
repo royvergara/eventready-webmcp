@@ -225,6 +225,19 @@ function currentBooking(state = session.snapshot()) {
   return booking?.eventId === currentEventId || (!booking?.eventId && booking?.eventTitle === state.brief.title) ? booking : null;
 }
 
+function syncUrl() {
+  const url = new URL(location.href);
+  if (appState.route === 'workspace') {
+    url.searchParams.set('view', 'event');
+    if (currentEventId) url.searchParams.set('event', currentEventId);
+    else url.searchParams.delete('event');
+    url.searchParams.set('phase', appState.activePhase);
+  } else {
+    for (const key of ['view', 'event', 'phase']) url.searchParams.delete(key);
+  }
+  history.replaceState(null, '', url);
+}
+
 function showRoute(route) {
   appState.route = route;
   $('startView').hidden = route !== 'start';
@@ -233,6 +246,7 @@ function showRoute(route) {
   $('newEventButton').hidden = route !== 'workspace';
   if (route === 'start') renderSavedEvents();
   document.body.dataset.route = route;
+  syncUrl();
   document.body.dataset.eventType = route === 'start' ? 'default' : String(session.brief.event_type || 'event').replaceAll(' ','-');
   document.title = route === 'start' ? 'EventReady · The whole event, held together' : `${session.snapshot().brief.title} · EventReady`;
   window.scrollTo({ top:0, behavior:'instant' });
@@ -664,6 +678,12 @@ function renderRunPhase(state) {
   const activeRow=combinedRows[activeIndex]||{at:'—',action:'All scheduled work is complete',evidence:'No open run tasks',owner:'Event team',key:'none'};
   const nextRow=combinedRows[activeIndex+1];
   document.querySelector('[data-phase-view="run"]').innerHTML = `${phaseHeader('EVENT DAY',ready?'The plan everyone can follow':'Your working run-of-show',ready?'Every moment has an owner and evidence from the current plan.':'This remains a draft until critical gaps and ownership are resolved.',ready,ready?'Ready':'Draft')}
+    <header class="run-print-head">
+      <p class="run-print-kicker">Run of show</p>
+      <h1>${esc(state.brief.title)}</h1>
+      <p class="run-print-meta">${esc(formatDate(state.brief.serveAt))} · ${esc(state.brief.venueName)}</p>
+      <p class="run-print-status">${ready?'Ready to run — every moment has an owner and evidence from the current plan.':'Working draft — resolve the remaining decisions before relying on this plan.'}</p>
+    </header>
     <section class="run-mobile-mode"><span class="kicker">NOW IN THE PLAN</span><div class="run-now"><time>${esc(activeRow.at)}</time><div><h3>${esc(activeRow.action)}</h3><p>${esc(activeRow.owner)} · ${esc(activeRow.evidence)}</p></div></div>${activeRow.key!=='none'?`<button class="primary-button" data-complete-row="${esc(activeRow.key)}">Mark complete</button>`:''}${nextRow?`<div class="run-next"><span>UP NEXT · ${esc(nextRow.at)}</span><strong>${esc(nextRow.action)}</strong></div>`:''}<div class="run-mobile-actions"><button class="quiet-button" data-toggle-run-sheet>${appState.runSheetExpanded?'Hide full run sheet':'View full run sheet'}</button><button class="quiet-button" data-report-issue>Report an issue</button></div></section>
     <section class="run-cover"><div><span>${esc(label(state.brief.eventType))}</span><h3>${esc(state.brief.title)}</h3><p>${esc(formatDate(state.brief.serveAt))} · ${esc(state.brief.venueName)}</p></div><aside><span>EVENTREADY</span><strong>${ready?'Ready to share':'Working draft'}</strong></aside></section>
     <div class="run-banner ${ready?'ready':''}"><strong>${ready?'READY TO SHARE':'DRAFT PLAN'}</strong><span>${ready?'Use this sequence with providers and the event team.':'Resolve remaining decisions before relying on this plan.'}</span><div class="run-actions"><details class="share-menu"><summary class="quiet-button">Share ${icon('chevron')}</summary><div><button type="button" data-copy-run>Copy plan</button><button type="button" data-email-run>Email plan</button></div></details><button class="quiet-button" data-print-run>Print</button></div></div>
@@ -719,6 +739,7 @@ function operationalState(state) {
 
 function activatePhase(phase, scroll=true) {
   appState.activePhase = PHASES.includes(phase) ? phase : 'shape';
+  syncUrl();
   document.querySelectorAll('[data-phase]').forEach(button => {
     const active=button.dataset.phase===appState.activePhase;
     button.classList.toggle('active',active);
@@ -1041,6 +1062,14 @@ if (booking?.refinement && (!booking.eventId || booking.eventTitle===session.bri
   if (booking.optionId && session.snapshot().options.some(option=>option.id===booking.optionId)) session.selectPlan(booking.optionId);
   if (booking.refinement.basket?.length) session.customizeBasket(booking.refinement.basket);
 }
-if (new URLSearchParams(location.search).get('view') === 'event') {
-  appState.activePhase=firstIncompletePhase(session.snapshot()); renderWorkspace(session.snapshot()); showRoute('workspace');
+const bootParams = new URLSearchParams(location.search);
+if (bootParams.get('view') === 'event') {
+  const wantedEvent = bootParams.get('event');
+  if (wantedEvent === 'sample-wedding') resetSample();
+  else if (wantedEvent && eventStore.events[wantedEvent]) restoreEvent(wantedEvent);
+  const wantedPhase = bootParams.get('phase');
+  appState.activePhase = PHASES.includes(wantedPhase) ? wantedPhase : firstIncompletePhase(session.snapshot());
+  renderWorkspace(session.snapshot());
+  showRoute('workspace');
+  activatePhase(appState.activePhase, false);
 } else showRoute('start');
