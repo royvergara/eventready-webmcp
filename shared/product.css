@@ -873,3 +873,8 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 .icon{display:inline-block;width:1em;height:1em;flex:none;vertical-align:-.13em}
 .run-check .icon,.readiness-matrix article>span .icon,.readiness-transition>div>span .icon{width:1.05em;height:1.05em;vertical-align:0}
 .impact-banner>span .icon,.plan-phase-row.done>span .icon{width:1.1em;height:1.1em;vertical-align:0}
+
+/* A footnote, not a warning. Standing alone under the readiness cards, the filled
+   amber .prototype-note read as an alert about something being wrong. */
+.readiness-note{display:flex;align-items:flex-start;gap:.45rem;margin:.1rem 0 1.15rem;color:var(--muted);font-size:.62rem;line-height:1.55}
+.readiness-note .icon{margin-top:.15rem;opacity:.75}
