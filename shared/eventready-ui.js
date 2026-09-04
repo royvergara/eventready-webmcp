@@ -393,6 +393,46 @@ function renderShape() {
   $('previewRequirements').innerHTML = requirements.map(item => `<span>${esc(item)}</span>`).join('');
 }
 
+
+// The plan really is composed from eight provider contracts and five checks; it
+// just happens in under a frame, so it read as a canned result rather than work.
+// These are the engine's own stages, paced so you can see them happen.
+const GENERATING_STEPS = [
+  'Reading your brief',
+  'Reading eight provider contracts',
+  'Composing service plans',
+  'Checking coverage, timing and ownership',
+  'Building the run of show'
+];
+
+function runGenerating(done) {
+  const list = $('generatingSteps'), bar = $('generatingBar');
+  const instant = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  list.innerHTML = GENERATING_STEPS.map((step, i) =>
+    `<li data-step="${i}"><span>${icon('circle')}</span>${esc(step)}</li>`).join('');
+  bar.style.width = '0%';
+  openOverlay('generatingOverlay');
+  let index = 0;
+  const advance = () => {
+    if (index > 0) {
+      const previous = list.querySelector(`[data-step="${index - 1}"]`);
+      previous.classList.remove('active');
+      previous.classList.add('done');
+      previous.querySelector('span').innerHTML = icon('check');
+    }
+    if (index === GENERATING_STEPS.length) {
+      closeOverlay('generatingOverlay', { restoreFocus: false });
+      done();
+      return;
+    }
+    list.querySelector(`[data-step="${index}"]`).classList.add('active');
+    bar.style.width = `${Math.round(((index + 1) / GENERATING_STEPS.length) * 100)}%`;
+    index += 1;
+    setTimeout(advance, instant ? 0 : 380);
+  };
+  advance();
+}
+
 function buildPlan() {
   updateBriefFromFields();
   session.assess();
@@ -406,7 +446,7 @@ function buildPlan() {
   appState.activePhase = firstIncompletePhase(session.snapshot());
   renderWorkspace(session.snapshot());
   $('planReadySummary').textContent = `${session.brief.title} now has a structured brief and ${session.snapshot().readiness.responsibilities.length} operational responsibilities to coordinate.`;
-  openOverlay('planReadyOverlay');
+  runGenerating(() => openOverlay('planReadyOverlay'));
 }
 
 function phaseState(state) {
@@ -963,7 +1003,7 @@ $('startForm').addEventListener('submit',event => { event.preventDefault(); cons
 $('closeBriefReview').onclick=$('editBriefDescription').onclick=()=>{closeOverlay('briefReviewOverlay',{restoreFocus:false});appState.pendingBrief=null;$('startBrief').focus();};
 $('confirmBriefReview').onclick=confirmBriefReview;
 document.querySelectorAll('[data-start-brief]').forEach(button => button.onclick=()=>{ document.querySelectorAll('[data-start-brief]').forEach(item=>item.setAttribute('aria-pressed','false')); button.setAttribute('aria-pressed','true'); $('startBrief').value=button.dataset.startBrief; $('startBrief').focus(); });
-$('sampleWedding').onclick=()=>{resetSample();showRoute('workspace');};
+$('sampleWedding').onclick=()=>{resetSample();runGenerating(()=>showRoute('workspace'));};
 $('newEventButton').onclick=resetApplication; $('backToEvents').onclick=()=>showRoute('start'); $('backToStart').onclick=()=>showRoute('start');
 $('shapePrevious').onclick=()=>{appState.shapeStep=Math.max(0,appState.shapeStep-1);renderShape();};
 $('shapeNext').onclick=()=>{updateBriefFromFields();appState.shapeStep=Math.min(4,appState.shapeStep+1);renderShape();};
