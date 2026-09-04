@@ -1021,19 +1021,13 @@ select:not([multiple]):disabled{background-image:url("data:image/svg+xml,%3Csvg 
 /* --- renaming and removing an event --------------------------------------- */
 /* The list only ever grew: an event could be opened but not renamed without
    re-entering the five-step brief, and not removed at all. */
-.event-title-actions{display:flex;gap:.4rem;margin-top:.5rem}
+.event-header-side{display:flex;flex-direction:column;align-items:flex-end;gap:.65rem}
+.event-title-actions{display:flex;gap:.4rem}
 .event-title-actions .quiet-button{padding:.28rem .6rem;font-size:.62rem}
 .rename-event{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin:.15rem 0 .35rem}
 .rename-event input{min-width:min(20rem,100%);padding:.45rem .6rem;border:1px solid var(--rule-strong,#b9c1cc);border-radius:.5rem;
   background:var(--paper-card,#fff);color:var(--ink);font-family:var(--display);font-size:1.35rem;font-weight:560}
 .rename-event input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .rename-event .primary-button,.rename-event .quiet-button{padding:.4rem .7rem;font-size:.66rem}
-.saved-event-row{display:flex;align-items:stretch;gap:.5rem}
-.saved-event-row>.saved-event{flex:1;min-width:0}
-.saved-event-actions{display:flex;flex-direction:column;justify-content:center;gap:.35rem}
-.saved-event-actions .quiet-button{padding:.28rem .6rem;font-size:.6rem;white-space:nowrap}
 .primary-button.danger{background:var(--status-blocked);border-color:var(--status-blocked)}
-@media(max-width:640px){
-  .saved-event-row{flex-direction:column}
-  .saved-event-actions{flex-direction:row;justify-content:flex-end}
-}
+@media(max-width:760px){.event-header-side{align-items:flex-start}}
