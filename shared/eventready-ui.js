@@ -628,14 +628,14 @@ function renderCoordinatePhase(state) {
 function renderPreparePhase(state) {
   const unresolved = state.readiness.responsibilities.filter(row => row.status === 'unresolved');
   const operating=operationalState(state);
-  const open = [...state.readiness.blockers.map(item=>({type:'Blocker',title:item.message||item.kind||'Coverage issue',detail:item.detail||'Requires a plan change'})),...unresolved.map(row=>({type:'Unowned',title:label(row.resource),detail:`${row.when||'Timing to confirm'} · ${row.evidence}`}))];
+  const open = [...state.readiness.blockers.map(item=>({type:'Blocker',title:item.message||item.kind||'Coverage issue',detail:item.detail||'Requires a plan change',route:BLOCKER_ROUTE[item.check]||BLOCKER_ROUTE.coverage})),...unresolved.map(row=>({type:'Unowned',title:label(row.resource).replace(/^./,ch=>ch.toUpperCase()),detail:`${row.when||'Timing to confirm'} · ${row.evidence}`,route:BLOCKER_ROUTE.unclaimed}))];
   const confirmations=Object.values(eventOps.confirmation).filter(Boolean).length;
   document.querySelector('[data-phase-view="prepare"]').innerHTML = `${phaseHeader('EVENT PREFLIGHT',operating.status==='ready'?'Cleared for event day':operating.status==='confirmations'?'The plan is complete. Confirm the real-world handoffs.':'Close the gaps before they become surprises','A plan is only ready when its coverage, people, provider, timing, and critical confirmations agree.',operating.status==='ready','Cleared')}${nextAction(open.length?'Resolve the highest-impact blocker':operating.status==='confirmations'?'Complete the critical confirmations':'Open the operational run plan',open.length?(state.serviceLevel==='pickup'?'Review delivery':'Open Coordinate'):operating.status==='confirmations'?'Review confirmations':'Open Run',open.length?(state.serviceLevel==='pickup'?'data-review-delivery':'data-phase-jump="coordinate"'):operating.status==='confirmations'?'data-scroll-confirmations':'data-phase-jump="run"')}
     <section class="readiness-transition ${operating.status}"><div><span>${state.readiness.state==='ready'?'✓':'1'}</span><strong>Operating plan</strong><small>${state.readiness.counts?.covered ?? state.readiness.responsibilities.length-unresolved.length}/${state.readiness.responsibilities.length} covered · ${state.readiness.blockers.length} blockers · ${unresolved.length} unowned</small></div><i></i><div><span>${operating.status==='ready'?'✓':'2'}</span><strong>External verification</strong><small>${confirmations}/5 critical facts recorded</small></div><i></i><div><span>${operating.status==='ready'?'✓':'3'}</span><strong>Ready to run</strong><small>${operating.status==='ready'?'Shareable operating plan':'Unlocks when both stages agree'}</small></div></section>
-    <div class="readiness-matrix">${operating.areas.map(area=>`<article class="${area.status}"><span>${area.status==='ready'?'✓':area.status==='blocked'?'!':'○'}</span><div><strong>${esc(area.label)}</strong><small>${esc(area.detail)}</small></div><b>${esc(area.status==='ready'?'Ready':area.status==='blocked'?'Blocked':'Confirm')}</b></article>`).join('')}</div>
-    <section class="confirmation-panel" id="confirmationPanel"><header><div><span class="kicker">CRITICAL CONFIRMATIONS</span><h3>What must be true outside EventReady</h3><p>These demo checks record verification; they do not contact a provider or process payment.</p></div></header><div class="confirmation-list">${[['provider','Provider confirms availability'],['terms','Final price and contract terms reviewed'],['deposit','Required deposit recorded'],['finalCount','Final guest count confirmed'],['venueAccess','Venue access and on-site contact confirmed']].map(([key,text])=>`<label><input type="checkbox" data-confirmation="${key}" ${eventOps.confirmation[key]?'checked':''}><span><strong>${text}</strong><small>${eventOps.confirmation[key]?'Recorded for this demo plan':'Still needs confirmation'}</small></span></label>`).join('')}</div></section>
+    <div class="readiness-matrix" id="readinessAreas">${operating.areas.map(area=>`<article class="${area.status}"><span>${area.status==='ready'?'✓':area.status==='blocked'?'!':'○'}</span><div><strong>${esc(area.label)}</strong><small>${esc(area.detail)}</small>${(area.confirms||[]).length?`<div class="area-confirms">${area.confirms.map(key=>`<label><input type="checkbox" data-confirmation="${key}" ${eventOps.confirmation[key]?'checked':''}><span><strong>${esc(CONFIRMATION_LABELS[key])}</strong><small>${eventOps.confirmation[key]?'Recorded for this demo plan':'Still needs confirmation'}</small></span></label>`).join('')}</div>`:''}</div><div class="area-action"><b>${esc(area.status==='ready'?'Ready':area.status==='blocked'?'Blocked':'Confirm')}</b>${area.action?`<button class="quiet-button" data-phase-jump="${area.action.phase}">${esc(area.action.label)}</button>`:''}</div></article>`).join('')}</div>
+    <p class="prototype-note">These confirmations record verification for the demo. Nothing here contacts a provider or processes payment.</p>
     <div class="readiness-grid"><article class="readiness-card"><span>Coverage</span><strong>${state.readiness.counts?.covered ?? state.readiness.responsibilities.filter(row=>row.status!=='unresolved').length}</strong></article><article class="readiness-card"><span>Blockers</span><strong>${state.readiness.blockers.length}</strong></article><article class="readiness-card"><span>Unowned work</span><strong>${unresolved.length}</strong></article></div>
-    <section class="section-block"><header><h3>${open.length?'What still needs attention':operating.status==='ready'?'Every critical need has a clear path':'The operating plan is complete; external confirmations remain'}</h3>${state.serviceLevel==='pickup'&&open.length?'<button class="primary-button" data-review-delivery>Review delivery option</button>':''}</header><div class="blocker-list">${open.length?open.slice(0,12).map(item=>`<article class="blocker-row"><span>!</span><div><h4>${esc(item.title)}</h4><p>${esc(item.type)} · ${esc(item.detail)}</p></div><button class="quiet-button" data-phase-jump="coordinate">Resolve</button></article>`).join(''):operating.status==='ready'?'<article class="commitment"><h3>Ready to run</h3><p>Coverage, timing, ownership, and critical confirmations are satisfied. Open the run plan to share the operating sequence.</p><button class="primary-button" data-phase-jump="run">Open run plan →</button></article>':'<article class="commitment pending"><h3>Confirm before relying on this plan</h3><p>The operational structure is complete, but provider, deposit, final-count, or venue checks are still outstanding.</p><button class="primary-button" data-scroll-confirmations>Review confirmations ↑</button></article>'}</div></section>`;
+    <section class="section-block"><header><h3>${open.length?'What still needs attention':operating.status==='ready'?'Every critical need has a clear path':'The operating plan is complete; external confirmations remain'}</h3>${state.serviceLevel==='pickup'&&open.length?'<button class="primary-button" data-review-delivery>Review delivery option</button>':''}</header><div class="blocker-list">${open.length?open.slice(0,12).map(item=>`<article class="blocker-row"><span>!</span><div><h4>${esc(item.title)}</h4><p>${esc(item.type)} · ${esc(item.detail)}</p></div><button class="quiet-button" data-phase-jump="${item.route.phase}">${esc(item.route.label)}</button></article>`).join(''):operating.status==='ready'?'<article class="commitment"><h3>Ready to run</h3><p>Coverage, timing, ownership, and critical confirmations are satisfied. Open the run plan to share the operating sequence.</p><button class="primary-button" data-phase-jump="run">Open run plan →</button></article>':'<article class="commitment pending"><h3>Confirm before relying on this plan</h3><p>The operational structure is complete, but provider, deposit, final-count, or venue checks are still outstanding.</p><button class="primary-button" data-scroll-confirmations>Review confirmations ↑</button></article>'}</div></section>`;
 }
 
 function renderRunPhase(state) {
@@ -653,6 +653,26 @@ function renderRunPhase(state) {
     <div class="run-table ${appState.runSheetExpanded?'expanded':''}">${run.rows.map((row,index)=>`<article class="run-row ${eventOps.completedRows[index]?'complete':''}"><button class="run-check" data-complete-row="${index}" aria-label="Mark ${esc(row.action)} complete">${eventOps.completedRows[index]?'✓':'○'}</button><time>${esc(row.at)}</time><div><h4>${esc(row.action)}</h4><p>${esc(row.evidence)} · ${esc(state.brief.venueName)}</p></div><span>${esc(row.owner)}</span></article>`).join('')}${eventOps.customTasks.map((task,index)=>`<article class="run-row ${eventOps.completedRows[`custom-${index}`]?'complete':''}"><button class="run-check" data-complete-row="custom-${index}">${eventOps.completedRows[`custom-${index}`]?'✓':'○'}</button><time>${esc(task.when||'Time TBD')}</time><div><h4>${esc(task.name)}</h4><p>Custom responsibility · ${esc(state.brief.venueName)}</p></div><span>${esc(eventOps.team.find(person=>person.id===task.ownerId)?.name||'Unassigned')}</span></article>`).join('')}</div>`;
 }
 
+// Where a blocker is actually resolved. The engine already tags every finding
+// with a check; Prepare used to throw that away and send every "Resolve" button
+// to Coordinate, which is the right place for exactly one of these six.
+const BLOCKER_ROUTE = {
+  coverage:     { phase:'source',     label:'Review packages' },
+  quantity:     { phase:'source',     label:'Review packages' },
+  availability: { phase:'source',     label:'Review packages' },
+  timing:       { phase:'source',     label:'Review service level' },
+  unclaimed:    { phase:'coordinate', label:'Assign owners' },
+  budget:       { phase:'shape',      label:'Adjust the brief' }
+};
+
+const CONFIRMATION_LABELS = {
+  provider:'Provider confirms availability',
+  terms:'Final price and contract terms reviewed',
+  deposit:'Required deposit recorded',
+  finalCount:'Final guest count confirmed',
+  venueAccess:'Venue access and on-site contact confirmed'
+};
+
 function operationalState(state) {
   const engineReady=state.readiness.state==='ready';
   const customUnowned=eventOps.customTasks.filter(task=>!task.ownerId).length;
@@ -660,12 +680,21 @@ function operationalState(state) {
   const pendingAcceptance=assignedIds.filter(id=>!eventOps.assignmentAcceptance[id]).length;
   const committed=!!currentBooking(state);
   const confirmed=Object.values(eventOps.confirmation).every(Boolean);
+  const unowned=state.readiness.counts.unowned||customUnowned;
+  const coverageBlockers=state.readiness.blockers.filter(item=>item.check!=='unclaimed');
+  const blocker=coverageBlockers[0];
+  const choosePackage={phase:'source',label:'Choose a package'};
   const areas=[
-    {label:'Requirements coverage',status:state.readiness.blockers.length?'blocked':'ready',detail:state.readiness.blockers.length?`${state.readiness.blockers.length} coverage or timing blockers`:'Recorded needs have a covered path'},
-    {label:'Provider commitment',status:!committed?'blocked':eventOps.confirmation.provider&&eventOps.confirmation.terms?'ready':'confirm',detail:!committed?'No working package selected':eventOps.confirmation.provider?'Availability and terms recorded':'Availability or terms not confirmed'},
-    {label:'People & ownership',status:state.readiness.counts.unowned||customUnowned?'blocked':pendingAcceptance?'confirm':'ready',detail:state.readiness.counts.unowned||customUnowned?`${state.readiness.counts.unowned+customUnowned} responsibilities unassigned`:pendingAcceptance?`${pendingAcceptance} assignments awaiting acceptance`:'Every required responsibility is owned and accepted'},
-    {label:'Budget & deposit',status:!committed?'blocked':eventOps.confirmation.deposit?'ready':'confirm',detail:eventOps.confirmation.deposit?'Deposit status recorded':'Deposit still needs verification'},
-    {label:'Final event checks',status:eventOps.confirmation.finalCount&&eventOps.confirmation.venueAccess?'ready':'confirm',detail:eventOps.confirmation.finalCount&&eventOps.confirmation.venueAccess?'Guest count and venue access confirmed':'Final count or venue access still open'}
+    {label:'Requirements coverage',status:coverageBlockers.length?'blocked':'ready',detail:blocker?blocker.message:'Recorded needs have a covered path',
+     action:blocker?(BLOCKER_ROUTE[blocker.check]||BLOCKER_ROUTE.coverage):null},
+    {label:'Provider commitment',status:!committed?'blocked':eventOps.confirmation.provider&&eventOps.confirmation.terms?'ready':'confirm',detail:!committed?'No working package selected':eventOps.confirmation.provider?'Availability and terms recorded':'Availability or terms not confirmed',
+     action:committed?null:choosePackage,confirms:committed?['provider','terms']:[]},
+    {label:'People & ownership',status:unowned?'blocked':pendingAcceptance?'confirm':'ready',detail:unowned?`${unowned} responsibilities unassigned`:pendingAcceptance?`${pendingAcceptance} assignments awaiting acceptance`:'Every required responsibility is owned and accepted',
+     action:unowned?{phase:'coordinate',label:'Assign owners'}:pendingAcceptance?{phase:'coordinate',label:'Review acceptance'}:null},
+    {label:'Budget & deposit',status:!committed?'blocked':eventOps.confirmation.deposit?'ready':'confirm',detail:!committed?'No working package selected':eventOps.confirmation.deposit?'Deposit status recorded':'Deposit still needs verification',
+     action:committed?null:choosePackage,confirms:committed?['deposit']:[]},
+    {label:'Final event checks',status:eventOps.confirmation.finalCount&&eventOps.confirmation.venueAccess?'ready':'confirm',detail:eventOps.confirmation.finalCount&&eventOps.confirmation.venueAccess?'Guest count and venue access confirmed':'Final count or venue access still open',
+     confirms:['finalCount','venueAccess']}
   ];
   return {status:!engineReady||customUnowned||!committed?'incomplete':confirmed&&!pendingAcceptance?'ready':'confirmations',areas};
 }
@@ -762,7 +791,7 @@ function bindDynamicActions() {
   document.querySelectorAll('[data-report-issue]').forEach(button=>button.onclick=()=>showToast('Issue noted for the event lead in this demo.'));
   document.querySelectorAll('[data-toggle-add-person]').forEach(button=>button.onclick=()=>{$('addPersonForm').hidden=!$('addPersonForm').hidden;if(!$('addPersonForm').hidden)$('newPersonName').focus();});
   document.querySelectorAll('[data-scroll-team]').forEach(button=>button.onclick=()=>document.getElementById('teamRoster')?.scrollIntoView({behavior:'smooth'}));
-  document.querySelectorAll('[data-scroll-confirmations]').forEach(button=>button.onclick=()=>document.getElementById('confirmationPanel')?.scrollIntoView({behavior:'smooth'}));
+  document.querySelectorAll('[data-scroll-confirmations]').forEach(button=>button.onclick=()=>document.getElementById('readinessAreas')?.scrollIntoView({behavior:'smooth',block:'center'}));
   $('addPersonForm')?.addEventListener('submit',event=>{event.preventDefault();const name=$('newPersonName').value.trim();const role=$('newPersonRole').value.trim();if(!name||!role)return;eventOps.team.push({id:`person-${Date.now().toString(36)}`,name,role,contact:$('newPersonContact').value.trim()});persist();renderWorkspace(session.snapshot());});
   $('customTaskForm')?.addEventListener('submit',event=>{event.preventDefault();const name=$('customTaskName').value.trim();if(!name)return;eventOps.customTasks.push({name,when:$('customTaskWhen').value.trim(),ownerId:$('customTaskOwner').value});persist();renderWorkspace(session.snapshot());});
   if ($('venueCost')) $('venueCost').onchange=()=>{eventOps.ledger.venue=Math.max(0,Number($('venueCost').value)||0);persist();renderWorkspace(session.snapshot());};
