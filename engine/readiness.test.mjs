@@ -57,3 +57,35 @@ test('an unassessed event is never presented as ready', () => {
   assert.equal(report.state, 'not_assessed');
   assert.equal(report.score, 0);
 });
+
+test('setting a responsibility aside keeps it on the record with its reason', () => {
+  const id = buildResponsibilities(rows).find(r => r.resource === 'cleanup').id;
+  const assignments = assignResponsibility({}, id, 'not_applicable', 'Not needed', 'Venue handles it');
+  const responsibilities = buildResponsibilities(rows, assignments);
+  const row = responsibilities.find(r => r.id === id);
+  // Set aside is a status, never a deletion: the row and the reason both survive
+  // so the screen that recorded the decision can still show it.
+  assert.equal(responsibilities.length, rows.length);
+  assert.equal(row.status, 'not_applicable');
+  assert.equal(row.reason, 'Venue handles it');
+});
+
+test('a set-aside responsibility stops counting as unowned', () => {
+  const built = buildResponsibilities(rows);
+  const id = built.find(r => r.resource === 'cleanup').id;
+  const before = deriveReadiness({ ownershipRows: rows });
+  const after = deriveReadiness({
+    ownershipRows: rows,
+    assignments: assignResponsibility({}, id, 'not_applicable', 'Not needed', 'Venue handles it')
+  });
+  assert.equal(before.counts.unowned, 2);
+  assert.equal(after.counts.unowned, 1);
+});
+
+test('putting a set-aside responsibility back makes it unowned again', () => {
+  const id = buildResponsibilities(rows).find(r => r.resource === 'cleanup').id;
+  const aside = assignResponsibility({}, id, 'not_applicable', 'Not needed', 'Venue handles it');
+  const restored = assignResponsibility(aside, id, 'unassigned');
+  assert.deepEqual(restored, {});
+  assert.equal(buildResponsibilities(rows, restored).find(r => r.id === id).status, 'unresolved');
+});

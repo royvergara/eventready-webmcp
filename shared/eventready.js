@@ -196,8 +196,8 @@ export class EventSession {
     return this.emit();
   }
 
-  assign(responsibilityId, owner, ownerLabel = '') {
-    this.assignments = assignResponsibility(this.assignments, responsibilityId, owner, ownerLabel);
+  assign(responsibilityId, owner, ownerLabel = '', reason = '') {
+    this.assignments = assignResponsibility(this.assignments, responsibilityId, owner, ownerLabel, reason);
     this.delta = { lines: [`Assigned ${ownerLabel || owner} to a previously unowned responsibility.`] };
     this.recalculateReadiness();
     return this.emit();
