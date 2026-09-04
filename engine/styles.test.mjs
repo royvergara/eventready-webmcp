@@ -30,7 +30,9 @@ const docPages = pages.filter(page => readFileSync(page, 'utf8').includes('/shar
 // The retired names. Any one of them reappearing means a page has started a
 // fifth template rather than using the one that exists.
 const RETIRED = ['harness-shell', 'docs-reference-shell', 'harness-body', 'technical-body',
-                 'harness-main', 'technical-main', 'docs-reference-nav', 'mountHeader'];
+                 'harness-main', 'technical-main', 'docs-reference-nav', 'mountHeader',
+                 // the docket: a sheet number and a ruled band beside it
+                 'sheethead-band', 'kicker-no', 'sheethead-meta'];
 
 test('every documentation page is built from the one template', () => {
   assert.ok(docPages.length >= 7, `expected the documentation set, found ${docPages.length}`);
