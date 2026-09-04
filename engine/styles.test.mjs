@@ -122,6 +122,42 @@ test('product.css is imported unlayered', () => {
     'product.css is imported into a cascade layer again');
 });
 
+// WCAG relative luminance, so the status palette can be checked without a browser.
+const channel = value => (value /= 255) <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+const luminance = hex => {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).map(channel);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a, b) => {
+  const [x, y] = [luminance(a), luminance(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+};
+
+test('every status colour clears AA against the surface it sits on', () => {
+  // These are set at 9.6–10.6px, so AA wants 4.5:1 and the 3:1 large-text
+  // allowance does not apply. The blocked chip shipped at 4.25 and the kicker on
+  // the navy band at 3.05 before this was measured rather than eyeballed.
+  const css = readFileSync('shared/product.css', 'utf8');
+  const value = name => css.match(new RegExp(`${name}:(#[0-9a-f]{6})`, 'i'))?.[1];
+  const pairs = [
+    ['--status-blocked', '--coral-soft', 'blocked chip'],
+    ['--status-confirm', '--amber-soft', 'confirm chip'],
+    ['--status-ready',   '--green-soft', 'ready chip'],
+    ['--accent-on-dark', null,           'kicker on the navy band']
+  ];
+  for (const [fg, bg, what] of pairs) {
+    // a token may alias another; resolve one hop
+    const resolve = name => value(name) || value(css.match(new RegExp(`${name}:var\\((--[\\w-]+)\\)`))?.[1] ?? '');
+    const front = resolve(fg);
+    // the navy band's lightest gradient stop is the hardest case for light text
+    const back = bg ? resolve(bg) : '#302d57';
+    assert.ok(front && back, `${what}: could not resolve ${fg} / ${bg ?? 'the navy stop'}`);
+    const ratio = contrast(front, back);
+    assert.ok(ratio >= 4.5,
+      `${what} is ${ratio.toFixed(2)}:1 (${front} on ${back}); AA wants 4.5:1 at this size`);
+  }
+});
+
 test('every module the pages load actually parses', () => {
   // The whole suite passed green while the application was dead. A stray quote in
   // a template literal made shared/eventready-ui.js fail to parse, so no handler
