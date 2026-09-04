@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { chromium } from '/Users/royvergara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';
+import { loadChromium } from './playwright.mjs';
+const chromium = await loadChromium();
 
 const base = process.env.VISUAL_URL || 'http://localhost:8080';
 const out = new URL('../screenshots/release/', import.meta.url);
